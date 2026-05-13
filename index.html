@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>KPI Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080818;--surf:#0F0F2A;--surf2:#161632;--surf3:#1E1E40;
+  --p:#7C3AED;--pg:#A78BFA;--p2:#5B21B6;
+  --c:#06B6D4;--cg:#67E8F9;
+  --a:#F59E0B;--ag:#FCD34D;
+  --g:#10B981;--gg:#6EE7B7;
+  --r:#EF4444;--rg:#FCA5A5;
+  --t:#F1F5F9;--tm:#94A3B8;--td:#475569;
+  --border:rgba(124,58,237,.3);
+  --glow:0 0 20px rgba(124,58,237,.4);
+  --glow2:0 0 40px rgba(6,182,212,.3);
+}
+html,body{height:100%;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--t);overflow:hidden}
+canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.screen.off{display:none}
+.panel{background:linear-gradient(135deg,rgba(15,15,42,.95),rgba(22,22,50,.95));border:1px solid var(--border);border-radius:24px;backdrop-filter:blur(20px);box-shadow:var(--glow),inset 0 1px 0 rgba(167,139,250,.1);padding:32px;width:100%;max-width:680px;animation:panelIn .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes panelIn{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:none}}
+.wide{max-width:900px}
+
+/* TYPOGRAPHY */
+.orb{font-family:'Orbitron',monospace}
+h1.game-title{font-family:'Orbitron',monospace;font-size:clamp(2rem,6vw,4rem);font-weight:900;background:linear-gradient(135deg,#A78BFA,#67E8F9,#FCD34D);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:none;line-height:1.1}
+.subtitle{color:var(--tm);font-size:1rem;margin-top:8px}
+.section-title{font-family:'Orbitron',monospace;font-size:.75rem;letter-spacing:.15em;color:var(--pg);text-transform:uppercase;margin-bottom:12px}
+
+/* NEON BUTTON */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 28px;border:none;border-radius:12px;font-family:'Space Grotesk',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);opacity:0;transition:opacity .2s}
+.btn:hover::before{opacity:1}
+.btn:active{transform:scale(.96)}
+.btn-p{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;box-shadow:0 4px 20px rgba(124,58,237,.4)}
+.btn-p:hover{box-shadow:0 6px 30px rgba(124,58,237,.6);transform:translateY(-2px)}
+.btn-c{background:linear-gradient(135deg,var(--c),#0891B2);color:#fff;box-shadow:0 4px 20px rgba(6,182,212,.35)}
+.btn-c:hover{box-shadow:0 6px 30px rgba(6,182,212,.5);transform:translateY(-2px)}
+.btn-a{background:linear-gradient(135deg,var(--a),#D97706);color:#000;box-shadow:0 4px 20px rgba(245,158,11,.35)}
+.btn-a:hover{transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--pg);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(124,58,237,.1);border-color:var(--pg)}
+.btn-lg{padding:16px 40px;font-size:1.1rem;border-radius:16px}
+.btn-sm{padding:8px 16px;font-size:.82rem;border-radius:8px}
+.btn-full{width:100%}
+
+/* INPUT */
+.inp{width:100%;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(124,58,237,.3);border-radius:12px;color:var(--t);font-family:'Space Grotesk',sans-serif;font-size:.95rem;outline:none;transition:all .2s}
+.inp:focus{border-color:var(--pg);box-shadow:0 0 0 3px rgba(124,58,237,.15),var(--glow)}
+.inp::placeholder{color:var(--td)}
+.lbl{display:block;font-size:.82rem;font-weight:600;color:var(--tm);margin-bottom:6px;letter-spacing:.03em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+
+/* BADGE */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;letter-spacing:.03em}
+.tag-p{background:rgba(124,58,237,.2);color:var(--pg);border:1px solid rgba(124,58,237,.3)}
+.tag-c{background:rgba(6,182,212,.15);color:var(--cg);border:1px solid rgba(6,182,212,.25)}
+.tag-a{background:rgba(245,158,11,.15);color:var(--ag);border:1px solid rgba(245,158,11,.25)}
+.tag-g{background:rgba(16,185,129,.15);color:var(--gg);border:1px solid rgba(16,185,129,.25)}
+.tag-r{background:rgba(239,68,68,.15);color:var(--rg);border:1px solid rgba(239,68,68,.25)}
+
+/* DIVIDER */
+.div{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:20px 0}
+
+/* ── HUD ── */
+#hud{position:fixed;top:0;left:0;right:0;z-index:30;display:none;padding:10px 20px;background:rgba(8,8,24,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);align-items:center;gap:16px}
+.hud-avatar{font-size:1.8rem;cursor:pointer}
+.hud-name{font-size:.75rem;color:var(--tm);font-weight:600}
+.hud-score{font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:700;color:var(--pg)}
+.hp-bar-wrap{display:flex;gap:4px;align-items:center}
+.heart{font-size:1.1rem;transition:all .3s;filter:drop-shadow(0 0 4px #ef4444)}
+.heart.dead{filter:grayscale(1);opacity:.3}
+.xp-wrap{flex:1;max-width:180px}
+.xp-bar{height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--c));border-radius:99px;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
+.xp-label{font-size:.65rem;color:var(--tm);margin-bottom:2px;font-weight:600}
+/* Timer ring */
+.timer-wrap{position:relative;width:52px;height:52px;flex-shrink:0}
+.timer-ring{width:52px;height:52px;transform:rotate(-90deg)}
+.timer-bg-c{fill:none;stroke:rgba(255,255,255,.08);stroke-width:4}
+.timer-fg-c{fill:none;stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .8s linear,stroke .5s}
+.timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;color:var(--t)}
+.hint-btn{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);color:var(--ag);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s}
+.hint-btn:hover{background:rgba(245,158,11,.25)}
+
+/* ── INTRO SCREEN ── */
+#s-intro{background:transparent}
+.intro-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(124,58,237,.15) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(6,182,212,.1) 0%,transparent 50%)}
+.intro-content{text-align:center;z-index:1;padding:20px}
+.game-logo{font-size:5rem;margin-bottom:-8px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.feature-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:20px 0}
+.pulse-ring{animation:pulseRing 2s infinite}
+@keyframes pulseRing{0%,100%{box-shadow:0 4px 20px rgba(124,58,237,.4)}50%{box-shadow:0 4px 40px rgba(124,58,237,.7),0 0 60px rgba(124,58,237,.2)}}
+
+/* ── AVATAR GRID ── */
+.av-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px}
+.av-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:16px 8px;text-align:center;cursor:pointer;transition:all .25s}
+.av-card:hover{border-color:var(--pg);background:rgba(124,58,237,.1);transform:translateY(-4px)}
+.av-card.sel{border-color:var(--pg);background:rgba(124,58,237,.15);transform:translateY(-4px);box-shadow:var(--glow)}
+.av-emoji{font-size:2.6rem;display:block}
+.av-name{font-size:.7rem;color:var(--tm);font-weight:600;margin-top:6px}
+.av-role{font-size:.65rem;color:var(--td);margin-top:2px}
+
+/* ── LEVEL CARDS ── */
+.lv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:540px){.lv-grid{grid-template-columns:1fr}}
+.lv-card{border-radius:20px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .25s;border:2px solid;position:relative;overflow:hidden}
+.lv-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .25s}
+.lv-card:hover::before,.lv-card.sel::before{opacity:1}
+.lv-card:hover{transform:translateY(-6px)}
+.lv-card.sel{transform:translateY(-6px) scale(1.03)}
+.lv-basic{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.06)}
+.lv-basic::before{background:rgba(16,185,129,.06)}
+.lv-basic.sel{box-shadow:0 0 30px rgba(16,185,129,.3)}
+.lv-medium{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.06)}
+.lv-medium.sel{box-shadow:0 0 30px rgba(245,158,11,.3)}
+.lv-expert{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.06)}
+.lv-expert.sel{box-shadow:0 0 30px rgba(239,68,68,.3)}
+.lv-icon{font-size:2.8rem;margin-bottom:8px;display:block}
+.lv-name{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700}
+.lv-desc{font-size:.75rem;color:var(--tm);margin-top:6px;line-height:1.5}
+
+/* ── MISSION PANEL ── */
+.mission-header{background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(6,182,212,.1));border:1px solid rgba(124,58,237,.3);border-radius:16px;padding:20px;margin-bottom:20px;position:relative;overflow:hidden}
+.mission-header::after{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.3),transparent)}
+.sector-icon{font-size:3rem}
+.objectives-list{list-style:none;display:flex;flex-col:column;gap:8px}
+.obj-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:10px;border-left:3px solid var(--p);font-size:.88rem}
+
+/* ── METADATA TABLE ── */
+.var-table{width:100%;border-collapse:collapse}
+.var-table th{text-align:left;padding:10px 12px;font-size:.75rem;font-weight:700;letter-spacing:.08em;color:var(--pg);border-bottom:1px solid var(--border);text-transform:uppercase}
+.var-table td{padding:10px 12px;font-size:.85rem;border-bottom:1px solid rgba(255,255,255,.04)}
+.var-table tr:hover td{background:rgba(124,58,237,.06)}
+code.vname{background:rgba(124,58,237,.15);color:var(--pg);padding:2px 8px;border-radius:6px;font-size:.8rem;font-family:'Orbitron',monospace;font-weight:400}
+
+/* ── FORMULA BUILDER ── */
+/* Variables pool — barra superior horizontal con scroll */
+.var-pool{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
+.vchip{padding:6px 12px;border-radius:99px;border:1px solid rgba(124,58,237,.4);background:rgba(124,58,237,.1);color:var(--pg);font-size:.78rem;font-weight:600;cursor:grab;transition:all .18s;user-select:none;white-space:nowrap}
+.vchip:hover{background:rgba(124,58,237,.3);border-color:var(--pg);transform:scale(1.06)}
+.vchip.dragging{opacity:.35;transform:scale(.92)}
+.vchip.distractor{border-color:rgba(71,85,105,.4);background:rgba(71,85,105,.08);color:var(--td)}
+.vchip.distractor:hover{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:var(--rg)}
+
+/* Slots grid — horizontal */
+.slots-grid{display:grid;gap:10px;margin-top:8px}
+
+/* Drop zone compacto */
+.drop-zone{min-height:38px;border:2px dashed rgba(124,58,237,.35);border-radius:8px;padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;transition:all .25s;background:rgba(255,255,255,.02)}
+.drop-zone.over{border-color:var(--pg);background:rgba(124,58,237,.14);box-shadow:var(--glow)}
+.drop-zone.has-items{border-style:solid;border-color:rgba(124,58,237,.45)}
+.drop-zone .placeholder{font-size:.72rem;color:var(--td);padding:2px 4px}
+.fraction-bar{width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--pg),transparent);border-radius:99px}
+.times100{font-family:'Orbitron',monospace;font-size:.7rem;color:var(--ag);text-align:right}
+.type-btn{flex:1;padding:5px 8px;border-radius:8px;border:1.5px solid;cursor:pointer;font-weight:700;font-size:.72rem;transition:all .18s;background:transparent}
+.type-btn.kpi{border-color:rgba(6,182,212,.4);color:var(--cg)}
+.type-btn.kpi.active{background:rgba(6,182,212,.2);border-color:var(--c);box-shadow:0 0 10px rgba(6,182,212,.2)}
+.type-btn.kgi{border-color:rgba(245,158,11,.4);color:var(--ag)}
+.type-btn.kgi.active{background:rgba(245,158,11,.15);border-color:var(--a);box-shadow:0 0 10px rgba(245,158,11,.2)}
+
+/* Slot individual compacto */
+.indicator-slot{border-radius:12px;padding:10px 12px}
+.slot-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;flex-shrink:0}
+.slot-num.kgi-n{background:rgba(245,158,11,.2);color:var(--ag);border:1px solid rgba(245,158,11,.3)}
+.slot-num.kpi-n{background:rgba(6,182,212,.15);color:var(--cg);border:1px solid rgba(6,182,212,.25)}
+
+/* Builder full-height layout */
+.builder-wrap{display:flex;flex-direction:column;height:calc(100vh - 80px);overflow:hidden}
+.pool-section{flex-shrink:0;padding:6px 0 4px}
+.slots-section{flex:1;overflow-y:auto;padding-right:2px}
+.slots-section::-webkit-scrollbar{width:3px}
+.slots-section::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.submit-section{flex-shrink:0;padding:8px 0 4px}
+
+/* Correct answer hint in feedback */
+.correct-answer{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:8px 12px;font-size:.78rem;margin-top:4px}
+.correct-answer strong{color:var(--gg)}
+.correct-answer code{background:rgba(16,185,129,.15);color:var(--gg);padding:1px 6px;border-radius:4px;font-size:.75rem}
+
+/* ── DASHBOARD ── */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.dash-stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center}
+.dash-val{font-family:'Orbitron',monospace;font-size:1.8rem;font-weight:700}
+.dash-lbl{font-size:.72rem;color:var(--tm);font-weight:600;letter-spacing:.05em;margin-top:4px}
+.progress-ring-wrap{display:flex;justify-content:center;align-items:center;padding:8px 0}
+
+/* ── CHARACTER ── */
+.char-wrap{position:fixed;bottom:20px;left:20px;z-index:20;pointer-events:none}
+.char-body{font-size:3.5rem;animation:charBob 2s ease-in-out infinite;cursor:pointer;pointer-events:auto;filter:drop-shadow(0 0 12px rgba(124,58,237,.6))}
+@keyframes charBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+.char-body.happy{animation:charHappy .5s ease forwards}
+@keyframes charHappy{0%{transform:scale(1)}30%{transform:scale(1.4) rotate(10deg)}60%{transform:scale(.9) rotate(-5deg)}100%{transform:scale(1) rotate(0deg)}}
+.char-body.sad{animation:charSad .6s ease forwards}
+@keyframes charSad{0%,100%{transform:rotate(0)}20%{transform:rotate(-15deg)}40%{transform:rotate(15deg)}60%{transform:rotate(-10deg)}80%{transform:rotate(10deg)}}
+.speech-bubble{position:absolute;bottom:calc(100% + 8px);right:0;background:rgba(15,15,42,.95);border:1px solid var(--border);border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:.8rem;max-width:220px;color:var(--t);box-shadow:var(--glow);white-space:nowrap;animation:bubblePop .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bubblePop{from{opacity:0;transform:scale(.8) translateY(10px)}to{opacity:1;transform:none}}
+
+/* ── FEEDBACK OVERLAY ── */
+.overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(8,8,24,.8);backdrop-filter:blur(8px);padding:12px;overflow-y:auto}
+.overlay.off{display:none}
+.fb-box{background:linear-gradient(135deg,var(--surf),var(--surf2));border:1px solid var(--border);border-radius:20px;padding:20px 24px;max-width:500px;width:100%;text-align:center;box-shadow:var(--glow);animation:panelIn .35s cubic-bezier(.34,1.56,.64,1);max-height:calc(100vh - 24px);overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.fb-box::-webkit-scrollbar{width:3px}
+.fb-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.fb-emoji{font-size:3rem;display:block}
+.fb-pts{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--pg),var(--cg));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.fb-detail{text-align:left;display:flex;flex-direction:column;gap:6px}
+.fb-row{padding:7px 10px;border-radius:8px;font-size:.78rem;border-left:3px solid;line-height:1.5}
+.fb-row.ok{background:rgba(16,185,129,.1);border-color:var(--g);color:var(--gg)}
+.fb-row.ng{background:rgba(239,68,68,.08);border-color:var(--r);color:var(--rg)}
+
+/* ── RESULTS ── */
+.result-stars{display:flex;gap:8px;justify-content:center;font-size:2.5rem;margin:12px 0}
+.star-lit{filter:drop-shadow(0 0 8px #FCD34D)}
+.star-dim{filter:grayscale(1);opacity:.3}
+.result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:16px 0}
+.r-stat{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center}
+.r-val{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:700;background:linear-gradient(135deg,var(--pg),var(--cg));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.r-lbl{font-size:.72rem;color:var(--tm);font-weight:600;margin-top:4px}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);border-radius:12px;padding:4px;margin-bottom:20px}
+.tab{flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--tm);font-family:'Space Grotesk',sans-serif;font-weight:600;cursor:pointer;transition:all .2s;font-size:.85rem}
+.tab.on{background:rgba(124,58,237,.25);color:var(--pg);box-shadow:0 0 10px rgba(124,58,237,.2)}
+
+/* ── ACHIEVEMENT TOAST ── */
+.ach-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(124,58,237,.2));border:1px solid rgba(245,158,11,.4);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:60;animation:toastUp .4s cubic-bezier(.34,1.56,.64,1);backdrop-filter:blur(16px)}
+.ach-toast.off{display:none}
+@keyframes toastUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ── CONFETTI ── */
+.conf{position:fixed;pointer-events:none;z-index:70;border-radius:2px;animation:confFall linear forwards}
+@keyframes confFall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(110vh) rotate(720deg)}}
+
+/* ── MINI GAME ── */
+.mini-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.mini-opt{padding:16px;border-radius:14px;border:1.5px solid var(--border);background:rgba(255,255,255,.03);cursor:pointer;transition:all .2s;font-weight:600;text-align:center}
+.mini-opt:hover{border-color:var(--pg);background:rgba(124,58,237,.1);transform:translateY(-3px)}
+.mini-opt.ok{border-color:var(--g);background:rgba(16,185,129,.15);color:var(--gg)}
+.mini-opt.ng{border-color:var(--r);background:rgba(239,68,68,.1);color:var(--rg)}
+
+/* SCROLLABLE PANEL */
+.scroll-inner{max-height:calc(100vh - 140px);overflow-y:auto;padding-right:4px}
+.scroll-inner::-webkit-scrollbar{width:4px}
+.scroll-inner::-webkit-scrollbar-track{background:transparent}
+.scroll-inner::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+/* REPORT */
+.rep-section{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.rep-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.88rem}
+.rep-row:last-child{border:none}
+.rep-key{color:var(--tm)}
+.rep-val{font-weight:700;color:var(--t)}
+
+/* PROGRESS CIRCLE SVG */
+.pc-svg{overflow:visible}
+.pc-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:8}
+.pc-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.5s cubic-bezier(.34,1.56,.64,1)}
+
+/* GLOW TEXT */
+.glow-p{text-shadow:0 0 20px rgba(167,139,250,.5)}
+.glow-c{text-shadow:0 0 20px rgba(103,232,249,.5)}
+
+/* Selector */
+.sel-inp{width:100%;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(124,58,237,.3);border-radius:12px;color:var(--t);font-family:'Space Grotesk',sans-serif;font-size:.95rem;outline:none;appearance:none;cursor:pointer}
+.sel-inp option{background:#0F0F2A}
+
+/* SCENARIO PROGRESS */
+.sc-prog{display:flex;gap:6px;margin-bottom:16px}
+.sc-dot{width:28px;height:6px;border-radius:99px;background:rgba(255,255,255,.08);transition:background .4s}
+.sc-dot.done{background:var(--g)}
+.sc-dot.active{background:linear-gradient(90deg,var(--p),var(--c));animation:dotPulse 1.5s infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* ── SLOT COMPLETO ── */
+.drop-zone.complete{border-style:solid;border-color:var(--g);animation:slotComplete .6s ease forwards}
+@keyframes slotComplete{0%{box-shadow:0 0 0 0 rgba(16,185,129,.4)}70%{box-shadow:0 0 0 8px rgba(16,185,129,0)}100%{box-shadow:none}}
+
+/* ── THEORY MODAL ── */
+.theory-overlay{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(8,8,24,.85);backdrop-filter:blur(10px);padding:16px}
+.theory-overlay.off{display:none}
+.theory-box{background:linear-gradient(135deg,var(--surf),var(--surf2));border:1px solid var(--border);border-radius:20px;padding:24px;max-width:600px;width:100%;max-height:calc(100vh - 40px);overflow-y:auto;animation:panelIn .3s ease}
+.theory-box::-webkit-scrollbar{width:4px}.theory-box::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-card{border-radius:14px;padding:16px}
+.compare-card.kpi-c{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.25)}
+.compare-card.kgi-c{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25)}
+.formula-ref{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:12px;padding:12px;margin-top:8px;font-size:.82rem}
+.formula-ref li{padding:4px 0;color:var(--tm);border-bottom:1px solid rgba(255,255,255,.04)}
+.formula-ref li:last-child{border:none}
+/* Distractor table row */
+.var-table tr.dimmed td{opacity:.45}
+.var-table tr.dimmed code.vname{background:rgba(239,68,68,.1);color:var(--rg)}
+/* Table wrap */
+.table-wrap{overflow-x:auto;margin-bottom:20px;border-radius:12px;border:1px solid var(--border)}
+.var-table{border-collapse:collapse}
+.var-table th,.var-table td{border-bottom:1px solid rgba(255,255,255,.05)}
+</style>
+</head>
+<body>
+
+<!-- PARTICLE CANVAS -->
+<canvas id="bg"></canvas>
+
+<!-- CHARACTER MASCOT -->
+<div class="char-wrap off" id="char-wrap">
+  <div id="speech" class="speech-bubble off"></div>
+  <div class="char-body" id="char-body" onclick="toggleSpeech()">🤖</div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-avatar" id="hud-av">🤖</div>
+  <div>
+    <div class="hud-name" id="hud-name">Analista</div>
+    <div class="hud-score" id="hud-score">0 pts</div>
+  </div>
+  <div style="display:flex;flex-direction:column;justify-content:center">
+    <div style="font-size:.6rem;color:var(--td);font-weight:700;letter-spacing:.1em">SECTOR</div>
+    <div style="font-size:.78rem;color:var(--cg);font-weight:700;font-family:'Orbitron',monospace" id="hud-scenario">—</div>
+  </div>
+  <div class="xp-wrap">
+    <div class="xp-label">XP</div>
+    <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+  </div>
+  <div class="hp-bar-wrap" id="hud-hearts"></div>
+  <div class="timer-wrap">
+    <svg class="timer-ring" viewBox="0 0 52 52">
+      <circle class="timer-bg-c" cx="26" cy="26" r="22"/>
+      <circle class="timer-fg-c" cx="26" cy="26" r="22" id="timer-c" stroke="var(--pg)" stroke-dasharray="138" stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-num" id="timer-n">--</div>
+  </div>
+  <button class="hint-btn" id="hint-btn" onclick="useHint()">💡 <span id="hint-ct">3</span></button>
+  <button class="hint-btn" onclick="showDashboard()" style="background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.25);color:var(--cg)">📊 Stats</button>
+  <button class="hint-btn" onclick="showTheory()" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:var(--gg)">📖 Teoría</button>
+</div>
+
+<!-- ══ SCREEN: INTRO ══ -->
+<div class="screen" id="s-intro">
+  <div class="intro-bg"></div>
+  <div class="intro-content">
+    <div class="game-logo">📊</div>
+    <h1 class="game-title">KPI QUEST</h1>
+    <p class="subtitle orb" style="font-size:.9rem;letter-spacing:.2em;color:var(--pg)">MISIÓN INDICADORES</p>
+    <p style="color:var(--tm);max-width:460px;margin:20px auto;line-height:1.8;font-size:.95rem">Centro de Inteligencia Empresarial. Analiza datos, construye indicadores KPI y KGI, salva organizaciones en crisis.</p>
+    <div class="feature-chips">
+      <span class="tag tag-p">🎮 Videojuego educativo</span>
+      <span class="tag tag-c">🧩 Drag &amp; Drop</span>
+      <span class="tag tag-a">📊 Dashboard live</span>
+      <span class="tag tag-g">📄 PDF descargable</span>
+    </div>
+    <button class="btn btn-p btn-lg pulse-ring" onclick="go('s-register')" style="margin-top:8px">
+      ⚡ Iniciar Misión
+    </button>
+    <br/>
+    <button class="btn btn-ghost btn-sm" onclick="showLeaderboard()" style="margin-top:12px">🏆 Ver ranking</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN: REGISTER ══ -->
+<div class="screen off" id="s-register">
+  <div class="panel">
+    <div class="section-title">Paso 1 de 3 — Perfil del Analista</div>
+    <h2 style="font-size:1.5rem;margin-bottom:20px">📋 Tus datos</h2>
+    <div class="grid2">
+      <div><label class="lbl">Nombre *</label><input class="inp" id="r-nom" placeholder="Tu nombre"/></div>
+      <div><label class="lbl">Apellido *</label><input class="inp" id="r-ape" placeholder="Tu apellido"/></div>
+      <div><label class="lbl">Asignatura *</label><input class="inp" id="r-asi" placeholder="Ej: Inteligencia Empresarial"/></div>
+      <div><label class="lbl">Docente</label><input class="inp" id="r-doc" placeholder="Nombre del docente"/></div>
+      <div><label class="lbl">Paralelo / Curso</label><input class="inp" id="r-par" placeholder="Ej: A · 3er Semestre"/></div>
+      <div><label class="lbl">Fecha</label><input class="inp" id="r-fec" type="date"/></div>
+    </div>
+    <div id="r-err" style="color:var(--rg);font-size:.82rem;margin-top:8px;display:none"></div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="btn btn-ghost" onclick="go('s-intro')">← Volver</button>
+      <button class="btn btn-p btn-full" onclick="regNext()">Elegir Personaje →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: AVATAR ══ -->
+<div class="screen off" id="s-avatar">
+  <div class="panel wide">
+    <div class="section-title">Paso 2 de 3 — Tu Personaje</div>
+    <h2 style="font-size:1.5rem;margin-bottom:6px">🎭 Elige tu Analista</h2>
+    <p style="color:var(--tm);font-size:.85rem;margin-bottom:20px">Tu personaje reaccionará en tiempo real a tus respuestas</p>
+    <div class="av-grid" id="av-grid"></div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="btn btn-ghost" onclick="go('s-register')">← Volver</button>
+      <button class="btn btn-p btn-full" onclick="avNext()">Elegir Nivel →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: LEVEL ══ -->
+<div class="screen off" id="s-level">
+  <div class="panel wide">
+    <div class="section-title">Paso 3 de 3 — Dificultad</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <span id="lv-av" style="font-size:2.5rem">🤖</span>
+      <div>
+        <h2 style="font-size:1.4rem">¡Hola, <span id="lv-nom"></span>!</h2>
+        <p style="color:var(--tm);font-size:.85rem">¿Cuánto desafío puedes aguantar?</p>
+      </div>
+    </div>
+    <div class="lv-grid">
+      <div class="lv-card lv-basic" onclick="selLv('basic')" id="lc-basic">
+        <span class="lv-icon">🌱</span>
+        <div class="lv-name" style="color:var(--gg)">BÁSICO</div>
+        <div class="lv-desc">Datos ordenados · Pistas visibles · Tiempo relajado</div>
+        <div class="tag tag-g" style="margin-top:10px">Recomendado</div>
+      </div>
+      <div class="lv-card lv-medium" onclick="selLv('medium')" id="lc-medium">
+        <span class="lv-icon">🔥</span>
+        <div class="lv-name" style="color:var(--ag)">MEDIO</div>
+        <div class="lv-desc">Variables complejas · Pistas limitadas · Tiempo ajustado</div>
+        <div class="tag tag-a" style="margin-top:10px">Para practicantes</div>
+      </div>
+      <div class="lv-card lv-expert" onclick="selLv('expert')" id="lc-expert">
+        <span class="lv-icon">💎</span>
+        <div class="lv-name" style="color:var(--rg)">EXPERTO</div>
+        <div class="lv-desc">Caos total · Sin pistas · Máxima precisión</div>
+        <div class="tag tag-r" style="margin-top:10px">Solo para valientes</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="btn btn-ghost" onclick="go('s-avatar')">← Volver</button>
+      <button class="btn btn-p btn-full" onclick="startGame()">⚡ ¡Comenzar Juego!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: GAME ══ -->
+<div class="screen off" id="s-game" style="align-items:flex-start;padding-top:72px;padding-left:12px;padding-right:12px;padding-bottom:0">
+  <div style="width:100%;max-width:960px;height:calc(100vh - 72px);display:flex;flex-direction:column" id="game-panel">
+    <div id="game-content" style="flex:1;overflow-y:auto;background:linear-gradient(135deg,rgba(15,15,42,.97),rgba(22,22,50,.97));border:1px solid var(--border);border-radius:20px;padding:20px;backdrop-filter:blur(20px);box-shadow:var(--glow)"><!-- injected --></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: DASHBOARD ══ -->
+<div class="screen off" id="s-dash">
+  <div class="panel wide scroll-inner" style="max-height:calc(100vh - 40px)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:1.4rem">📊 Tu Dashboard</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeDash()">✕ Cerrar</button>
+    </div>
+    <div class="dash-grid" id="dash-stats"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="dash-charts"></div>
+    <div class="div"></div>
+    <div id="dash-history"></div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: RESULT ══ -->
+<div class="screen off" id="s-result">
+  <div class="panel scroll-inner" style="text-align:center;max-height:calc(100vh - 40px)">
+    <div id="res-emoji" style="font-size:5rem">🏆</div>
+    <h2 class="orb" style="font-size:1.8rem;margin-top:8px" id="res-title">MISIÓN COMPLETADA</h2>
+    <p style="color:var(--tm);margin:8px 0" id="res-msg"></p>
+    <div class="result-stars" id="res-stars"></div>
+    <div class="result-grid" id="res-grid"></div>
+    <div id="badges-row" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px"></div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="btn btn-ghost" onclick="go('s-intro');resetGame()">🔄 Jugar otra vez</button>
+      <button class="btn btn-a btn-full" onclick="showReport()">📄 Ver Reporte & PDF</button>
+    </div>
+    <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="showLeaderboard()">🏆 Ver Ranking</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN: REPORT ══ -->
+<div class="screen off" id="s-report">
+  <div class="panel scroll-inner" style="max-height:calc(100vh - 40px)">
+    <div style="background:linear-gradient(135deg,rgba(124,58,237,.3),rgba(6,182,212,.15));border-radius:16px;padding:20px;text-align:center;margin-bottom:20px">
+      <div class="orb" style="font-size:.75rem;letter-spacing:.2em;color:var(--pg)">KPI QUEST</div>
+      <h2 style="font-size:1.4rem;margin-top:4px">Reporte de Evaluación</h2>
+    </div>
+    <div id="report-body"></div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="btn btn-ghost" onclick="go('s-result')">← Resultados</button>
+      <button class="btn btn-p btn-full" onclick="downloadPDF()">⬇ Descargar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: LEADERBOARD ══ -->
+<div class="screen off" id="s-lead">
+  <div class="panel">
+    <h2 style="font-size:1.5rem;margin-bottom:16px">🏆 Hall de la Fama</h2>
+    <div id="lead-body"></div>
+    <button class="btn btn-p btn-full" style="margin-top:16px" onclick="go('s-intro')">← Inicio</button>
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="overlay off" id="fb-overlay">
+  <div class="fb-box">
+    <span class="fb-emoji" id="fb-em">✅</span>
+    <h3 id="fb-title" style="font-size:1.4rem"></h3>
+    <div class="fb-pts" id="fb-pts"></div>
+    <div class="fb-detail" id="fb-detail"></div>
+    <button class="btn btn-p btn-full" id="fb-next" onclick="fbNext()" style="position:sticky;bottom:0;margin-top:4px">Continuar →</button>
+  </div>
+</div>
+
+<div class="overlay off" id="hint-overlay">
+  <div class="fb-box">
+    <span class="fb-emoji">💡</span>
+    <h3 style="font-size:1.2rem;margin-bottom:8px">Pista del Analista</h3>
+    <p id="hint-text" style="color:var(--tm);line-height:1.7;font-size:.9rem"></p>
+    <div style="color:var(--rg);font-size:.8rem;font-weight:600;margin-top:10px">−15 puntos de penalización</div>
+    <button class="btn btn-a btn-full" style="margin-top:16px" onclick="closeHint()">Entendido</button>
+  </div>
+</div>
+
+<!-- ACHIEVEMENT TOAST -->
+<div class="ach-toast off" id="ach-toast">
+  <span id="ach-icon" style="font-size:2rem">🏆</span>
+  <div>
+    <div style="font-weight:700;font-size:.88rem">¡Logro Desbloqueado!</div>
+    <div id="ach-name" style="color:var(--tm);font-size:.78rem"></div>
+  </div>
+</div>
+
+<!-- THEORY MODAL -->
+<div class="theory-overlay off" id="theory-overlay">
+  <div class="theory-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="font-size:1.3rem">📖 KPI vs KGI — Referencia Rápida</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeTheory()">✕</button>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card kpi-c">
+        <div class="tag tag-c" style="margin-bottom:10px">KPI — Key Performance Indicator</div>
+        <p style="font-size:.83rem;color:var(--tm);line-height:1.7">Mide el <strong style="color:var(--cg)">desempeño de un proceso</strong> interno. Responde: ¿Cómo estamos ejecutando?</p>
+        <ul style="list-style:none;margin-top:8px;display:flex;flex-direction:column;gap:4px">
+          <li style="font-size:.78rem;color:var(--tm)">▸ Tasa de conversión</li>
+          <li style="font-size:.78rem;color:var(--tm)">▸ Tasa de error en pedidos</li>
+          <li style="font-size:.78rem;color:var(--tm)">▸ % Entregas a tiempo</li>
+          <li style="font-size:.78rem;color:var(--tm)">▸ Asistencia a tutorías</li>
+        </ul>
+      </div>
+      <div class="compare-card kgi-c">
+        <div class="tag tag-a" style="margin-bottom:10px">KGI — Key Goal Indicator</div>
+        <p style="font-size:.83rem;color:var(--tm);line-height:1.7">Mide el <strong style="color:var(--ag)">logro del objetivo estratégico</strong>. Responde: ¿Alcanzamos la meta?</p>
+        <ul style="list-style:none;margin-top:8px;display:flex;flex-direction:column;gap:4px">
+          <li style="font-size:.78rem;color:var(--tm)">▸ Cumplimiento meta de ventas</li>
+          <li style="font-size:.78rem;color:var(--tm)">▸ Tasa de retención vs meta</li>
+          <li style="font-size:.78rem;color:var(--tm)">▸ Recuperación de cartera vs meta</li>
+          <li style="font-size:.78rem;color:var(--tm)">▸ Cobertura de atención</li>
+        </ul>
+      </div>
+    </div>
+    <div class="section-title">📐 Fórmula General</div>
+    <div style="background:rgba(124,58,237,.1);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;font-family:'Orbitron',monospace;font-size:.9rem;color:var(--pg)">
+      Indicador = Numerador ÷ Denominador × 100%
+    </div>
+    <div class="section-title" style="margin-top:16px">🔑 Reglas clave</div>
+    <ul class="formula-ref">
+      <li>✅ Solo variables <strong>numéricas</strong> forman indicadores</li>
+      <li>✅ El KGI siempre compara resultado con una <strong>meta</strong></li>
+      <li>✅ Un KPI mide eficiencia del <strong>proceso</strong>, no del resultado final</li>
+      <li>🚫 Variables de texto son distractores (nombre, color, descripción)</li>
+      <li>🚫 Variables sin relación con los objetivos son distractores</li>
+    </ul>
+    <button class="btn btn-p btn-full" style="margin-top:16px" onclick="closeTheory()">Entendido ✓</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════ PARTICLES ═══════════════════
+(()=>{
+const c=document.getElementById('bg'),ctx=c.getContext('2d');
+let W,H,pts=[];
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight;pts=Array.from({length:80},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+.5,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,a:Math.random()}))}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  pts.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(167,139,250,${p.a*.5})`;ctx.fill();
+  });
+  pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
+    const d=Math.hypot(a.x-b.x,a.y-b.y);
+    if(d<120){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=`rgba(124,58,237,${(1-d/120)*.15})`;ctx.lineWidth=1;ctx.stroke()}
+  }));
+  requestAnimationFrame(draw);
+}
+resize();draw();window.addEventListener('resize',resize);
+})();
+
+// ═══════════════════ DATA ═══════════════════
+const AVATARS=[
+  {id:'detective',e:'🕵️',n:'Detective',r:'Analista de campo'},
+  {id:'robot',e:'🤖',n:'Robot BI',r:'Inteligencia artificial'},
+  {id:'doctor',e:'👩‍⚕️',n:'Dra. Métrika',r:'Experta en salud de datos'},
+  {id:'captain',e:'🦸',n:'Capitán KPI',r:'Héroe estratégico'},
+  {id:'ninja',e:'🥷',n:'Ninja Excel',r:'Maestro sigiloso'},
+  {id:'hacker',e:'👨‍💻',n:'Data Hacker',r:'Hackeador de insights'},
+  {id:'manager',e:'👔',n:'Gerente Pro',r:'Decisiones al instante'},
+  {id:'scientist',e:'👩‍🔬',n:'Científica',r:'Laboratorio de métricas'},
+  {id:'explorer',e:'🧭',n:'Exploradora',r:'Territorios desconocidos'},
+];
+
+const SCENARIOS={
+basic:[
+  {id:'super',sector:'Supermercado',icon:'🛒',company:'FastMarket S.A.',
+   mission:'FastMarket ha detectado una caída en ventas y aumento de reclamos. La gerencia necesita indicadores urgentes para evaluar el rendimiento comercial.',
+   objectives:['Aumentar ventas mensuales respecto a la meta','Reducir el número de reclamos','Mejorar la eficiencia de entregas'],
+   vars:[
+     {n:'ventas_totales',d:'Monto total vendido en el mes',t:'Numérica',ok:true},
+     {n:'meta_ventas',d:'Meta mensual de ventas establecida',t:'Numérica',ok:true},
+     {n:'clientes_atendidos',d:'Total de clientes atendidos',t:'Numérica',ok:true},
+     {n:'compras_realizadas',d:'Total de compras cerradas efectivamente',t:'Numérica',ok:true},
+     {n:'reclamos',d:'Número de reclamos recibidos',t:'Numérica',ok:true},
+     {n:'pedidos_totales',d:'Total de pedidos procesados',t:'Numérica',ok:true},
+     {n:'pedidos_tardios',d:'Pedidos entregados fuera del plazo',t:'Numérica',ok:true},
+     {n:'nombre_gerente',d:'Nombre del gerente de turno',t:'Texto',ok:false},
+     {n:'color_uniforme',d:'Color del uniforme del personal',t:'Texto',ok:false},
+   ],
+   indicators:[
+     {type:'KGI',name:'Cumplimiento Meta de Ventas',num:['ventas_totales'],den:['meta_ventas'],hint:'Un KGI mide el LOGRO FINAL estratégico: ¿cumplimos la meta?'},
+     {type:'KPI',name:'Tasa de Conversión',num:['compras_realizadas'],den:['clientes_atendidos'],hint:'KPI de proceso: ¿cuántos visitantes compran?'},
+     {type:'KPI',name:'Tasa de Entregas a Tiempo',num:['pedidos_totales','pedidos_tardios'],den:['pedidos_totales'],hint:'Eficiencia del proceso logístico.',subtract_num:true},
+     {type:'KPI',name:'Tasa de Reclamos',num:['reclamos'],den:['clientes_atendidos'],hint:'Calidad de la experiencia del cliente.'},
+   ],
+   timeLimit:300,hints:['KPI = proceso interno · KGI = logro estratégico final','Fíjate en qué variables comparan resultado con meta','Descarta las variables de texto sin valor numérico'],
+   context:[
+     {icon:'📉',label:'Ventas actuales',val:'$842K',note:'Meta: $1.2M',color:'var(--rg)'},
+     {icon:'😡',label:'Reclamos',val:'247',note:'+63% vs mes anterior',color:'var(--rg)'},
+     {icon:'🚚',label:'Entregas tardías',val:'31%',note:'del total de pedidos',color:'var(--ag)'},
+   ],
+   crisis:'⚠️ ALERTA GERENCIAL',
+  },
+  {id:'restaurant',sector:'Restaurante',icon:'🍽️',company:'Sabores del Valle',
+   mission:'El restaurante quiere mejorar la experiencia reduciendo tiempos de espera y errores en pedidos para fidelizar más comensales.',
+   objectives:['Reducir tiempo promedio de atención','Disminuir errores en pedidos','Aumentar ingresos mensuales vs meta'],
+   vars:[
+     {n:'pedidos_totales',d:'Total de pedidos tomados en el mes',t:'Numérica',ok:true},
+     {n:'errores_pedidos',d:'Pedidos entregados incorrectamente',t:'Numérica',ok:true},
+     {n:'ingresos',d:'Ingresos totales del mes',t:'Numérica',ok:true},
+     {n:'meta_ingresos',d:'Meta de ingresos mensual',t:'Numérica',ok:true},
+     {n:'quejas',d:'Quejas formales de clientes',t:'Numérica',ok:true},
+     {n:'clientes',d:'Total de clientes atendidos',t:'Numérica',ok:true},
+     {n:'receta_estrella',d:'Descripción del plato más vendido',t:'Texto',ok:false},
+   ],
+   indicators:[
+     {type:'KGI',name:'Cumplimiento Meta Ingresos',num:['ingresos'],den:['meta_ingresos'],hint:'¿Se alcanzó el objetivo financiero del mes?'},
+     {type:'KPI',name:'Tasa de Error en Pedidos',num:['errores_pedidos'],den:['pedidos_totales'],hint:'Calidad del proceso de cocina y servicio.'},
+     {type:'KPI',name:'Tasa de Quejas',num:['quejas'],den:['clientes'],hint:'Percepción del cliente sobre el servicio.'},
+   ],
+   timeLimit:300,hints:['El KGI siempre compara resultado con una META','Los KPI miden eficiencia de procesos internos'],
+   context:[
+     {icon:'💰',label:'Ingresos mes',val:'$67K',note:'Meta: $90K — gap del 25%',color:'var(--rg)'},
+     {icon:'🙋',label:'Quejas formales',val:'38',note:'+21% respecto al mes prev.',color:'var(--rg)'},
+     {icon:'🍽️',label:'Errores pedidos',val:'12%',note:'de 420 pedidos totales',color:'var(--ag)'},
+   ],
+   crisis:'⚠️ SATISFACCIÓN EN RIESGO',
+  },
+],
+medium:[
+  {id:'university',sector:'Universidad',icon:'🎓',company:'Universidad Siglo XXI',
+   mission:'La universidad necesita reducir la deserción y mejorar aprobación. Los datos tienen variables complejas y algunos distractores.',
+   objectives:['Reducir deserción estudiantil','Mejorar tasa de aprobación académica','Aumentar retención institucional'],
+   vars:[
+     {n:'matricula_inicial',d:'Estudiantes matriculados al inicio del período',t:'Numérica',ok:true},
+     {n:'estudiantes_activos',d:'Estudiantes que completaron el período',t:'Numérica',ok:true},
+     {n:'estudiantes_retirados',d:'Estudiantes que abandonaron',t:'Numérica',ok:true},
+     {n:'materias_aprobadas',d:'Total de materias aprobadas en el período',t:'Numérica',ok:true},
+     {n:'materias_cursadas',d:'Total de materias cursadas',t:'Numérica',ok:true},
+     {n:'tutorias_realizadas',d:'Tutorías ofrecidas por la institución',t:'Numérica',ok:true},
+     {n:'tutorias_asistidas',d:'Tutorías a las que asistieron estudiantes',t:'Numérica',ok:true},
+     {n:'meta_retencion',d:'Meta de retención institucional (%)',t:'Numérica',ok:true},
+     {n:'numero_aulas',d:'Aulas disponibles en el campus',t:'Numérica',ok:false},
+     {n:'antiguedad_docente',d:'Años promedio de experiencia docente',t:'Numérica',ok:false},
+     {n:'color_facultad',d:'Colores de identidad por facultad',t:'Texto',ok:false},
+   ],
+   indicators:[
+     {type:'KGI',name:'Tasa de Retención Estudiantil',num:['estudiantes_activos'],den:['matricula_inicial'],hint:'El KGI mide si la institución LOGRA retener a sus estudiantes (logro final).'},
+     {type:'KPI',name:'Tasa de Deserción',num:['estudiantes_retirados'],den:['matricula_inicial'],hint:'Proceso crítico que incide directamente en la retención.'},
+     {type:'KPI',name:'Tasa de Aprobación',num:['materias_aprobadas'],den:['materias_cursadas'],hint:'Desempeño del proceso educativo en aula.'},
+     {type:'KPI',name:'Asistencia a Tutorías',num:['tutorias_asistidas'],den:['tutorias_realizadas'],hint:'Aprovechamiento del soporte académico ofrecido.'},
+   ],
+   timeLimit:240,hints:['Descarta variables sin relación directa con los objetivos','Recuerda: número de aulas NO mide desempeño académico'],
+   context:[
+     {icon:'🎓',label:'Deserción actual',val:'18.4%',note:'Subida desde 12% del año pasado',color:'var(--rg)'},
+     {icon:'✅',label:'Aprobación',val:'61%',note:'Meta institucional: 75%',color:'var(--ag)'},
+     {icon:'📚',label:'Tutorías aprovechadas',val:'43%',note:'Baja participación estudiantil',color:'var(--ag)'},
+   ],
+   crisis:'🚨 CRISIS ACADÉMICA',
+  },
+  {id:'ecommerce',sector:'E-Commerce',icon:'🛍️',company:'ClickShop Online',
+   mission:'ClickShop quiere mejorar la conversión y reducir el abandono del carrito. Los datos tienen nombres técnicos y distractores.',
+   objectives:['Aumentar tasa de conversión','Reducir abandono de carrito','Maximizar ingresos vs meta'],
+   vars:[
+     {n:'visitas_web',d:'Visitas únicas al sitio web',t:'Numérica',ok:true},
+     {n:'carritos_creados',d:'Carritos de compra iniciados',t:'Numérica',ok:true},
+     {n:'compras_completadas',d:'Compras finalizadas con pago',t:'Numérica',ok:true},
+     {n:'ingresos_totales',d:'Ingresos generados por ventas',t:'Numérica',ok:true},
+     {n:'meta_ingresos',d:'Meta de ingresos del período',t:'Numérica',ok:true},
+     {n:'rebotes',d:'Visitas que salieron sin interacción',t:'Numérica',ok:true},
+     {n:'devoluciones',d:'Productos devueltos por clientes',t:'Numérica',ok:true},
+     {n:'velocidad_servidor',d:'Velocidad promedio del servidor (ms)',t:'Numérica',ok:false},
+     {n:'productos_catalogo',d:'Total de productos en catálogo',t:'Numérica',ok:false},
+     {n:'empleados_soporte',d:'Agentes de soporte activos',t:'Numérica',ok:false},
+   ],
+   indicators:[
+     {type:'KGI',name:'Cumplimiento Meta Ingresos',num:['ingresos_totales'],den:['meta_ingresos'],hint:'Los ingresos vs meta representan el logro estratégico final.'},
+     {type:'KPI',name:'Tasa de Conversión Web',num:['compras_completadas'],den:['visitas_web'],hint:'¿Cuántos visitantes terminan comprando?'},
+     {type:'KPI',name:'Tasa de Abandono de Carrito',num:['carritos_creados','compras_completadas'],den:['carritos_creados'],hint:'Mide la pérdida en el proceso del embudo de ventas.',subtract_num:true},
+     {type:'KPI',name:'Tasa de Rebote',num:['rebotes'],den:['visitas_web'],hint:'Calidad del tráfico que llega al sitio.'},
+   ],
+   timeLimit:240,hints:['La velocidad del servidor y el catálogo NO son indicadores de desempeño','Relaciona cada indicador con uno de los objetivos listados'],
+   context:[
+     {icon:'🛍️',label:'Conversión web',val:'1.8%',note:'Benchmark del sector: 3.5%',color:'var(--rg)'},
+     {icon:'🛒',label:'Abandono carrito',val:'72%',note:'Ingresos perdidos: $340K/mes',color:'var(--rg)'},
+     {icon:'💵',label:'Ingresos vs meta',val:'58%',note:'Segundo trimestre consecutivo',color:'var(--ag)'},
+   ],
+   crisis:'🚨 CONVERSIÓN CRÍTICA',
+  },
+],
+expert:[
+  {id:'cooperative',sector:'Cooperativa',icon:'🏦',company:'Coop. Futuro Solidario',
+   mission:'La cooperativa necesita reducir morosidad, mejorar recuperación de cartera, controlar riesgo crediticio y elevar satisfacción del socio. Datos extensos y caóticos.',
+   objectives:['Reducir índice de morosidad','Mejorar recuperación de cartera vs meta','Controlar riesgo crediticio','Aumentar satisfacción del socio'],
+   vars:[
+     {n:'cartera_total',d:'Total de créditos colocados vigentes',t:'Numérica',ok:true},
+     {n:'cartera_vencida',d:'Cartera con pagos en mora',t:'Numérica',ok:true},
+     {n:'cartera_riesgo',d:'Cartera clasificada en riesgo',t:'Numérica',ok:true},
+     {n:'monto_recuperado',d:'Capital recuperado de cartera vencida',t:'Numérica',ok:true},
+     {n:'meta_recuperacion',d:'Meta de recuperación del período',t:'Numérica',ok:true},
+     {n:'socios_encuestados',d:'Socios que respondieron la encuesta de satisfacción',t:'Numérica',ok:true},
+     {n:'socios_satisfechos',d:'Socios con calificación ≥ 4/5',t:'Numérica',ok:true},
+     {n:'expedientes_completos',d:'Expedientes crediticios con documentación completa',t:'Numérica',ok:true},
+     {n:'expedientes_totales',d:'Total de expedientes tramitados',t:'Numérica',ok:true},
+     {n:'reclamos_socios',d:'Reclamos formales de socios',t:'Numérica',ok:true},
+     {n:'nombre_auditor',d:'Nombre del auditor externo',t:'Texto',ok:false},
+     {n:'fecha_fundacion',d:'Año de fundación de la cooperativa',t:'Numérica',ok:false},
+     {n:'metros_oficina',d:'Metros cuadrados de la oficina principal',t:'Numérica',ok:false},
+     {n:'num_computadoras',d:'Equipos informáticos disponibles',t:'Numérica',ok:false},
+   ],
+   indicators:[
+     {type:'KGI',name:'Recuperación de Cartera vs Meta',num:['monto_recuperado'],den:['meta_recuperacion'],hint:'El logro estratégico financiero: ¿recuperamos lo que esperábamos?'},
+     {type:'KPI',name:'Índice de Morosidad',num:['cartera_vencida'],den:['cartera_total'],hint:'Calidad de la cartera de crédito en tiempo real.'},
+     {type:'KPI',name:'Índice de Riesgo Crediticio',num:['cartera_riesgo'],den:['cartera_total'],hint:'Control de exposición al riesgo del portafolio.'},
+     {type:'KPI',name:'Satisfacción del Socio',num:['socios_satisfechos'],den:['socios_encuestados'],hint:'Percepción de calidad del servicio cooperativo.'},
+     {type:'KPI',name:'Completitud de Expedientes',num:['expedientes_completos'],den:['expedientes_totales'],hint:'Calidad del proceso administrativo de crédito.'},
+   ],
+   timeLimit:180,hints:['Primero descarta variables no numéricas y sin relación estratégica'],
+   context:[
+     {icon:'🟥',label:'Morosidad',val:'8.7%',note:'Límite regulatorio: 5%',color:'var(--rg)'},
+     {icon:'💼',label:'Cartera en riesgo',val:'$1.2M',note:'23% del portafolio total',color:'var(--rg)'},
+     {icon:'🙍',label:'Satisfacción socio',val:'54%',note:'Mínimo requerido: 70%',color:'var(--ag)'},
+   ],
+   crisis:'🚨 RIESGO FINANCIERO ALTO',
+  },
+  {id:'hospital',sector:'Hospital',icon:'🏥',company:'Hospital Vida Nueva',
+   mission:'El hospital busca reducir tiempos de espera, mejorar la calidad clínica y garantizar la satisfacción del paciente. Alta complejidad de datos.',
+   objectives:['Reducir tiempos de espera','Mejorar calidad clínica','Maximizar satisfacción del paciente'],
+   vars:[
+     {n:'pacientes_atendidos',d:'Total de pacientes atendidos en el mes',t:'Numérica',ok:true},
+     {n:'meta_pacientes',d:'Meta mensual de pacientes a atender',t:'Numérica',ok:true},
+     {n:'citas_reprogramadas',d:'Citas que debieron reprogramarse',t:'Numérica',ok:true},
+     {n:'citas_totales',d:'Total de citas agendadas',t:'Numérica',ok:true},
+     {n:'encuestas_ok',d:'Encuestas con calificación Buena o Excelente',t:'Numérica',ok:true},
+     {n:'encuestas_total',d:'Total de encuestas de satisfacción completadas',t:'Numérica',ok:true},
+     {n:'reingresos_30d',d:'Pacientes que reingresaron en menos de 30 días',t:'Numérica',ok:true},
+     {n:'reclamos_pacientes',d:'Quejas formales de pacientes',t:'Numérica',ok:true},
+     {n:'num_sillas_espera',d:'Sillas en la sala de espera',t:'Numérica',ok:false},
+     {n:'color_paredes',d:'Color de las paredes del hospital',t:'Texto',ok:false},
+   ],
+   indicators:[
+     {type:'KGI',name:'Cobertura de Atención',num:['pacientes_atendidos'],den:['meta_pacientes'],hint:'¿Cumplió el hospital su meta de atención estratégica?'},
+     {type:'KPI',name:'Tasa de Reprogramación',num:['citas_reprogramadas'],den:['citas_totales'],hint:'Eficiencia del proceso de agendamiento.'},
+     {type:'KPI',name:'Satisfacción del Paciente',num:['encuestas_ok'],den:['encuestas_total'],hint:'Percepción del paciente sobre la calidad recibida.'},
+     {type:'KPI',name:'Tasa de Reingreso',num:['reingresos_30d'],den:['pacientes_atendidos'],hint:'Calidad clínica del tratamiento administrado.'},
+   ],
+   timeLimit:180,hints:['Las sillas y el color de paredes son distractores evidentes'],
+   context:[
+     {icon:'⏱️',label:'Tiempo espera promedio',val:'47 min',note:'Estándar: ≤20 minutos',color:'var(--rg)'},
+     {icon:'😷',label:'Reingreso 30 días',val:'14%',note:'Indica calidad clínica baja',color:'var(--rg)'},
+     {icon:'📊',label:'Cobertura meta',val:'71%',note:'del objetivo mensual de atención',color:'var(--ag)'},
+   ],
+   crisis:'🚨 CALIDAD CLÍNICA COMPROMETIDA',
+  },
+]};
+
+const BADGES=[
+  {id:'no_hints',icon:'🧠',name:'Sin Pistas',desc:'Superaste un nivel sin usar pistas'},
+  {id:'perfect',icon:'⚗️',name:'Fórmula Perfecta',desc:'Todos los indicadores correctos'},
+  {id:'speedrun',icon:'⚡',name:'Analista Veloz',desc:'Terminaste en menos de la mitad del tiempo'},
+  {id:'kpi_master',icon:'📈',name:'Maestro KPI',desc:'5 KPI correctos seguidos'},
+  {id:'kgi_hunter',icon:'🎯',name:'Cazador de KGI',desc:'Todos los KGI identificados correctamente'},
+  {id:'distractor',icon:'🔎',name:'Auditor Experto',desc:'Detectaste todos los distractores'},
+  {id:'full_clear',icon:'💎',name:'Full Clear',desc:'Completaste todos los escenarios del nivel'},
+];
+
+const MINIGAMES=[
+  {type:'classify',title:'⚡ CLASIFICACIÓN RÁPIDA',sub:'¿Es KPI o KGI?',
+   q:[
+     {ind:'Tasa de conversión de clientes',ans:'KPI',why:'Mide el desempeño del proceso comercial, no el logro final.'},
+     {ind:'Cumplimiento de meta de ventas anuales',ans:'KGI',why:'Mide si se alcanzó el objetivo estratégico final.'},
+     {ind:'Porcentaje de entregas a tiempo',ans:'KPI',why:'Mide eficiencia del proceso logístico.'},
+     {ind:'Índice de retención vs meta institucional',ans:'KGI',why:'Mide el logro final de la institución.'},
+     {ind:'Tasa de error en pedidos de cocina',ans:'KPI',why:'Mide la calidad del proceso operativo.'},
+     {ind:'Recuperación de cartera vs meta anual',ans:'KGI',why:'Mide el logro financiero estratégico.'},
+     {ind:'Porcentaje de satisfacción del cliente',ans:'KPI',why:'Mide la calidad del proceso de atención.'},
+   ]},
+  {type:'distractor',title:'🔍 DETECTA EL DISTRACTOR',sub:'¿Cuál variable NO sirve para construir indicadores?',
+   q:[
+     {opts:['ventas_totales','meta_ventas','color_uniforme','reclamos'],ans:'color_uniforme',why:'El color de uniforme no es medible como indicador de desempeño.'},
+     {opts:['cartera_vencida','cartera_total','nombre_auditor','monto_recuperado'],ans:'nombre_auditor',why:'Un nombre es texto, no se puede usar en fórmulas de indicadores.'},
+     {opts:['matricula_inicial','numero_aulas','estudiantes_retirados','materias_aprobadas'],ans:'numero_aulas',why:'Las aulas disponibles no miden rendimiento académico.'},
+     {opts:['pacientes_atendidos','citas_totales','num_sillas_espera','citas_reprogramadas'],ans:'num_sillas_espera',why:'Las sillas no son un indicador de calidad de atención.'},
+   ]},
+];
+
+// ═══════════════════ STATE ═══════════════════
+const S={
+  player:{nom:'',ape:'',asi:'',doc:'',par:'',fec:'',av:'robot'},
+  level:'basic',score:0,hearts:3,hintsLeft:3,hintsUsed:0,
+  scIdx:0,scenarios:[],answers:[],badges:[],
+  startTime:0,noHints:true,allOk:true,streak:0,xp:0,
+  timerInt:null,timeLeft:0,timeTotal:0,
+  miniCb:null,
+};
+
+// ═══════════════════ NAV ═══════════════════
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('off'));
+  document.getElementById(id).classList.remove('off');
+  const inGame=['s-game','s-dash'].includes(id);
+  document.getElementById('hud').style.display=inGame?'flex':'none';
+  document.getElementById('char-wrap').classList.toggle('off',!inGame);
+}
+
+// ═══════════════════ REGISTER ═══════════════════
+function regNext(){
+  const n=v('r-nom').trim(),a=v('r-ape').trim(),s=v('r-asi').trim();
+  if(!n||!a||!s){show('r-err','Completa nombre, apellido y asignatura');document.getElementById('r-err').style.display='block';return;}
+  document.getElementById('r-err').style.display='none';
+  S.player={nom:n,ape:a,asi:s,doc:v('r-doc').trim(),par:v('r-par').trim(),fec:v('r-fec'),av:S.player.av};
+  buildAvGrid();go('s-avatar');
+}
+function v(id){return document.getElementById(id).value}
+function show(id,t){document.getElementById(id).textContent=t}
+
+// ═══════════════════ AVATARS ═══════════════════
+function buildAvGrid(){
+  document.getElementById('av-grid').innerHTML=AVATARS.map(a=>`
+    <div class="av-card${a.id===S.player.av?' sel':''}" onclick="pickAv('${a.id}')" id="avc-${a.id}">
+      <span class="av-emoji">${a.e}</span>
+      <div class="av-name">${a.n}</div>
+      <div class="av-role">${a.r}</div>
+    </div>`).join('');
+}
+function pickAv(id){
+  document.querySelectorAll('.av-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('avc-'+id).classList.add('sel');
+  S.player.av=id;
+}
+function avNext(){
+  const av=AVATARS.find(a=>a.id===S.player.av);
+  document.getElementById('lv-av').textContent=av.e;
+  document.getElementById('lv-nom').textContent=S.player.nom;
+  document.getElementById('hud-av').textContent=av.e;
+  document.getElementById('hud-name').textContent=S.player.nom;
+  document.getElementById('char-body').textContent=av.e;
+  go('s-level');
+}
+
+// ═══════════════════ LEVEL ═══════════════════
+function selLv(l){
+  document.querySelectorAll('.lv-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('lc-'+l).classList.add('sel');
+  S.level=l;
+}
+function startGame(){
+  S.scenarios=shuffle([...SCENARIOS[S.level]]);
+  S.scIdx=0;S.score=0;S.hearts=3;S.hintsLeft=3;S.hintsUsed=0;
+  S.answers=[];S.badges=[];S.noHints=true;S.allOk=true;S.streak=0;S.xp=0;
+  S.startTime=Date.now();
+  updateHUD();loadScenario(0);
+}
+function resetGame(){
+  clearTimer();
+  S.score=0;S.hearts=3;S.hintsLeft=3;S.hintsUsed=0;
+  S.answers=[];S.badges=[];S.noHints=true;S.allOk=true;S.streak=0;S.xp=0;
+  S.scIdx=0;S.scenarios=[];
+  document.getElementById('hint-ct').textContent=3;
+  document.querySelectorAll('.lv-card').forEach(c=>c.classList.remove('sel'));
+  selLv('basic');
+  updateHUD();
+}
+
+// ═══════════════════ SCENARIO ═══════════════════
+let dragVar=null;
+const slots={kgi:{num:[],den:[]},kpis:[]};
+
+function loadScenario(idx){
+  if(idx>=S.scenarios.length){endGame();return;}
+  const sc=S.scenarios[idx];
+  // reset slots
+  slots.kgi={num:[],den:[]};
+  slots.kpis=sc.indicators.filter(i=>i.type==='KPI').map(()=>({num:[],den:[]}));
+  slots.anon={};// reset anonymous slots
+  show('hud-scenario',sc.sector.toUpperCase());
+  startTimer(sc.timeLimit);
+  renderMission(sc);
+  go('s-game');
+  speak('¡Nueva misión! Lee el caso con atención 🔍');
+}
+
+// STAGE 1: MISSION — Tarjeta rica de empresa
+function renderMission(sc){
+  const objs=sc.objectives.map((o,i)=>`
+    <li class="obj-item" style="animation-delay:${i*.1}s">
+      <span style="background:linear-gradient(135deg,var(--p),var(--c));width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0">${i+1}</span>
+      <span>${o}</span>
+    </li>`).join('');
+  const dots=S.scenarios.map((_,i)=>`<div class="sc-dot${i<S.scIdx?' done':i===S.scIdx?' active':''}"></div>`).join('');
+  const ctx=sc.context||[];
+  const ctxCards=ctx.map(m=>`
+    <div style="flex:1;min-width:100px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;text-align:center">
+      <div style="font-size:1.4rem">${m.icon}</div>
+      <div style="font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:${m.color||'var(--pg)'};margin-top:4px">${m.val}</div>
+      <div style="font-size:.68rem;color:var(--tm);margin-top:2px;line-height:1.3">${m.label}</div>
+      ${m.note?`<div style="font-size:.6rem;color:var(--td);margin-top:2px">${m.note}</div>`:''}
+    </div>`).join('');
+  document.getElementById('game-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="section-title" style="margin:0">Escenario ${S.scIdx+1} / ${S.scenarios.length}</div>
+      <div class="sc-prog">${dots}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(6,182,212,.08));border:1px solid rgba(124,58,237,.25);border-radius:20px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden">
+      <div style="position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.25),transparent);pointer-events:none"></div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+        <div style="width:64px;height:64px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:2.4rem;flex-shrink:0">${sc.icon}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span class="tag tag-p">${sc.sector}</span>
+            ${sc.crisis?`<span class="tag tag-r" style="animation:dotPulse 1.5s infinite">${sc.crisis}</span>`:''}
+          </div>
+          <h2 style="font-size:1.35rem;font-weight:700">${sc.company}</h2>
+        </div>
+      </div>
+      ${ctxCards?`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">${ctxCards}</div>`:''}
+      <p style="color:rgba(241,245,249,.8);line-height:1.75;font-size:.9rem;border-left:3px solid var(--p);padding-left:12px">${sc.mission}</p>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="section-title">📋 Objetivos Estratégicos</div>
+      <ul class="objectives-list">${objs}</ul>
+    </div>
+    <button class="btn btn-c btn-full" onclick="renderVars()">📁 Analizar Variables del Caso →</button>`;
+}
+
+// STAGE 2: VARIABLES
+function renderVars(){
+  const sc=S.scenarios[S.scIdx];
+  const rows=sc.vars.map(v=>`
+    <tr class="${!v.ok?'dimmed':''}">
+      <td><code class="vname">${v.n}</code></td>
+      <td style="color:#94a3b8;font-size:.85rem">${v.d}</td>
+      <td><span class="tag ${v.t==='Numérica'?'tag-c':'tag-r'}">${v.t}</span></td>
+    </tr>`).join('');
+  document.getElementById('game-content').innerHTML=`
+    <div class="section-title">Expediente de Variables</div>
+    <p style="color:#94a3b8;font-size:.85rem;margin-bottom:16px">⚠️ Analiza bien: algunas son <strong style="color:#fb7185">distractoras</strong> y no sirven para fórmulas.</p>
+    <div class="table-wrap">
+      <table class="var-table">
+        <thead><tr><th>Variable</th><th>Descripción</th><th>Tipo</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <button class="btn btn-p btn-full" onclick="renderBuilder()">🔧 Construir Indicadores →</button>`;
+}
+
+// STAGE 3: BUILDER
+function renderBuilder(){
+  const sc=S.scenarios[S.scIdx];
+  const allVars=sc.vars;
+  const numVars=allVars.filter(v=>v.t==='Numérica');
+  const totalInds=sc.indicators.length;
+  const cols=totalInds<=2?totalInds:totalInds<=4?2:3;
+  
+  const pool=numVars.map(v=>`<div class="vchip${!v.ok?' distractor':''}" draggable="true" id="vc-${v.n}" data-var="${v.n}" data-desc="${v.d}" ondragstart="dragStart(event)" ondragend="dragEnd(event)" title="${v.d}">${v.n}</div>`).join('');
+  const allSlots=sc.indicators.map((_,i)=>buildAnonSlot(i)).join('');
+
+  document.getElementById('game-content').innerHTML=`
+    <div class="builder-wrap">
+      <div class="pool-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span class="section-title" style="margin:0">🧩 Construye ${totalInds} indicador${totalInds>1?'es':''} — arrastra variables</span>
+          <span style="font-size:.68rem;color:var(--td)"><span style="color:var(--pg)">●</span> Útil &nbsp;<span style="color:var(--td)">●</span> Distractor</span>
+        </div>
+        <div class="var-pool" id="var-pool">${pool}</div>
+      </div>
+      <div style="height:1px;background:var(--border);flex-shrink:0"></div>
+      <div class="slots-section" style="padding-top:10px">
+        <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:10px">${allSlots}</div>
+      </div>
+      <div class="submit-section">
+        <button class="btn btn-p btn-full" onclick="submitAll()">✅ Enviar y Evaluar</button>
+      </div>
+    </div>`;
+  document.querySelectorAll('.drop-zone').forEach(dz=>attachDrop(dz));
+  initTouchDrag();
+}
+
+// Slot anónimo numerado — no revela tipo ni nombre del indicador
+function buildAnonSlot(i){
+  const key=`ind-${i}`;
+  const colors=['#A78BFA','#67E8F9','#FCD34D','#6EE7B7','#F9A8D4'];
+  const c=colors[i%colors.length];
+  return `
+    <div class="indicator-slot" style="border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)" id="slot-wrap-${key}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:28px;height:28px;border-radius:50%;background:${c}22;border:2px solid ${c};display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;color:${c}">${(i+1).toString().padStart(2,'0')}</div>
+          <span style="font-size:.75rem;color:var(--tm);font-weight:600">INDICADOR ${i+1}</span>
+        </div>
+        <button onclick="clearAnonSlot('${key}')" style="background:transparent;border:none;color:var(--td);cursor:pointer;font-size:.75rem">🗑</button>
+      </div>
+      <div style="font-size:.6rem;color:var(--td);letter-spacing:.1em;font-weight:700;margin-bottom:4px">NUMERADOR</div>
+      <div class="drop-zone" id="dz-${key}-num" data-slot="${key}" data-part="num"><span class="placeholder">Arrastra aquí</span></div>
+      <div class="fraction-bar" style="margin:6px 0"></div>
+      <div style="font-size:.6rem;color:var(--td);letter-spacing:.1em;font-weight:700;margin-bottom:4px">DENOMINADOR</div>
+      <div class="drop-zone" id="dz-${key}-den" data-slot="${key}" data-part="den"><span class="placeholder">Arrastra aquí</span></div>
+      <div style="display:flex;gap:4px;margin-top:8px">
+        <button class="type-btn kpi active" onclick="setType('${key}','KPI',this)">KPI</button>
+        <button class="type-btn kgi" onclick="setType('${key}','KGI',this)">KGI</button>
+      </div>
+    </div>`;
+}
+function buildSlot(key,title,label,kpiIdx){
+  const isKGI=key==='kgi';
+  const color=isKGI?'var(--ag)':'var(--cg)';
+  const bg=isKGI?'rgba(245,158,11,.05)':'rgba(6,182,212,.04)';
+  const border=isKGI?'rgba(245,158,11,.25)':'rgba(6,182,212,.2)';
+  const nc=isKGI?'kgi-n':'kpi-n';
+  return `
+    <div class="indicator-slot" style="border:1px solid ${border};background:${bg}" id="slot-wrap-${key}">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <div class="slot-num ${nc}">${label}</div>
+        <span style="font-size:.75rem;color:${color};font-weight:700;line-height:1.2">${title}</span>
+      </div>
+      <div style="font-size:.65rem;color:var(--td);font-weight:700;letter-spacing:.06em;margin-bottom:3px">NUMERADOR</div>
+      <div class="drop-zone" id="dz-${key}-num" data-slot="${key}" data-part="num">
+        <span class="placeholder">Arrastra aquí</span>
+      </div>
+      <div class="fraction-bar" style="margin:5px 0"></div>
+      <div style="font-size:.65rem;color:var(--td);font-weight:700;letter-spacing:.06em;margin-bottom:3px">DENOMINADOR</div>
+      <div class="drop-zone" id="dz-${key}-den" data-slot="${key}" data-part="den">
+        <span class="placeholder">Arrastra aquí</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:4px">
+        <div style="display:flex;gap:4px;flex:1">
+          <button class="type-btn kpi${isKGI?'':' active'}" onclick="setType('${key}','KPI',this)">KPI</button>
+          <button class="type-btn kgi${isKGI?' active':''}" onclick="setType('${key}','KGI',this)">KGI</button>
+        </div>
+        <button onclick="clearSlot('${key}')" style="background:transparent;border:none;color:var(--td);cursor:pointer;font-size:.75rem" title="Limpiar">🗑</button>
+      </div>
+    </div>`;
+}
+
+function setType(key,type,btn){
+  const parent=btn.closest('.indicator-slot');
+  parent.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  getSlot(key).type=type;
+}
+function clearAnonSlot(key){
+  const sl=getAnonSlot(key);sl.num=[];sl.den=[];
+  ['num','den'].forEach(p=>{
+    const dz=document.getElementById(`dz-${key}-${p}`);
+    if(dz){dz.innerHTML='<span class="placeholder">Arrastra variables aquí</span>';dz.classList.remove('has-items');}
+  });
+}
+function getAnonSlot(key){
+  if(!slots.anon)slots.anon={};
+  if(!slots.anon[key])slots.anon[key]={num:[],den:[],type:'KPI'};
+  return slots.anon[key];
+}
+function clearSlot(key){
+  const sl=getSlot(key);sl.num=[];sl.den=[];
+  ['num','den'].forEach(p=>{
+    const dz=document.getElementById(`dz-${key}-${p}`);
+    if(dz){dz.innerHTML='<span class="placeholder">Arrastra variables aquí</span>';dz.classList.remove('has-items');}
+  });
+}
+function getSlot(key){
+  if(key.startsWith('ind-'))return getAnonSlot(key);
+  if(key==='kgi')return slots.kgi;
+  const i=parseInt(key.split('-')[1]);
+  while(slots.kpis.length<=i)slots.kpis.push({num:[],den:[]});
+  return slots.kpis[i];
+}
+
+// TOUCH DRAG & DROP SUPPORT (mobile)
+let touchDragEl=null,touchClone=null;
+function initTouchDrag(){
+  document.querySelectorAll('.vchip[draggable]').forEach(chip=>{
+    chip.addEventListener('touchstart',e=>{
+      touchDragEl=chip;
+      dragVar=chip.dataset.var;
+      chip.classList.add('dragging');
+      touchClone=chip.cloneNode(true);
+      touchClone.style.cssText=`position:fixed;opacity:.85;pointer-events:none;z-index:999;font-size:.78rem;padding:5px 10px;border-radius:99px;background:rgba(124,58,237,.4);border:1px solid var(--pg);color:var(--pg)`;
+      document.body.appendChild(touchClone);
+    },{passive:true});
+    chip.addEventListener('touchmove',e=>{
+      if(!touchClone)return;
+      const t=e.touches[0];
+      touchClone.style.left=(t.clientX-30)+'px';
+      touchClone.style.top=(t.clientY-20)+'px';
+    },{passive:true});
+    chip.addEventListener('touchend',e=>{
+      if(touchClone){touchClone.remove();touchClone=null;}
+      if(touchDragEl)touchDragEl.classList.remove('dragging');
+      const t=e.changedTouches[0];
+      const el=document.elementFromPoint(t.clientX,t.clientY);
+      const dz=el?.closest('.drop-zone');
+      if(dz&&dragVar){
+        const key=dz.dataset.slot,part=dz.dataset.part;
+        const sl=getSlot(key);
+        if(!sl[part].includes(dragVar)){sl[part].push(dragVar);renderDropZone(dz,sl[part]);}
+      }
+      touchDragEl=null;dragVar=null;
+    },{passive:true});
+  });
+}
+// MOUSE DRAG & DROP
+function dragStart(e){
+  dragVar=e.target.dataset.var;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed='copy';
+}
+function dragEnd(e){e.target.classList.remove('dragging');}
+function attachDrop(dz){
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault();dz.classList.remove('over');
+    if(!dragVar)return;
+    const key=dz.dataset.slot,part=dz.dataset.part;
+    const sl=getSlot(key);
+    if(sl[part].includes(dragVar))return;
+    sl[part].push(dragVar);
+    renderDropZone(dz,sl[part]);
+    dragVar=null;
+  });
+}
+function renderDropZone(dz,vars){
+  dz.innerHTML=vars.map(v=>`<div class="vchip" style="cursor:default;font-size:.75rem;padding:5px 10px">${v} <span onclick="removeFromZone('${dz.id}','${v}')" style="cursor:pointer;opacity:.6;margin-left:4px">✕</span></div>`).join('');
+  dz.classList.add('has-items');
+  // Visual: borde verde si ya tiene al menos una variable
+  dz.classList.add('complete');
+  setTimeout(()=>dz.classList.remove('complete'),700);
+}
+function removeFromZone(dzId,varName){
+  const dz=document.getElementById(dzId);
+  const key=dz.dataset.slot,part=dz.dataset.part;
+  const sl=getSlot(key);
+  sl[part]=sl[part].filter(v=>v!==varName);
+  if(sl[part].length===0){dz.innerHTML='<span class="placeholder">Arrastra variables aquí</span>';dz.classList.remove('has-items');}
+  else renderDropZone(dz,sl[part]);
+}
+
+// ═══════════════════ EVALUATE ═══════════════════
+function submitAll(){
+  const sc=S.scenarios[S.scIdx];
+  clearTimer();
+  let pts=0,rows=[];
+  // Recoger slots anónimos
+  const submitted=sc.indicators.map((_,i)=>getAnonSlot(`ind-${i}`));
+  const correct=sc.indicators;
+  const used=new Set();
+  // Algoritmo de mejor coincidencia (greedy)
+  submitted.forEach((sub,si)=>{
+    let best=null,bestScore=-1,bestIdx=-1;
+    correct.forEach((ind,ci)=>{
+      if(used.has(ci))return;
+      const distractors=sc.vars.filter(v=>!v.ok).map(v=>v.n);
+      const numOk=ind.num.filter(v=>sub.num.includes(v)&&!distractors.includes(v)).length;
+      const denOk=ind.den.filter(v=>sub.den.includes(v)&&!distractors.includes(v)).length;
+      const typeBonus=sub.type===ind.type?1:0;
+      const score=numOk+denOk+typeBonus;
+      if(score>bestScore){bestScore=score;best=ind;bestIdx=ci;}
+    });
+    if(best){used.add(bestIdx);}
+    const r=evalSlot(sub,best||{type:'KPI',name:'Sin coincidencia',num:[],den:[],hint:''},`IND. ${si+1}`,sc.vars);
+    pts+=r.pts;rows.push(r);
+  });
+
+  // Time bonus
+  const tb=Math.round((S.timeLeft/sc.timeLimit)*15);
+  pts+=tb;
+
+  // Hint penalty
+  pts=Math.max(0,pts-(S.hintsUsed*15));
+
+  S.score+=pts;
+  const allCorrect=rows.every(r=>r.ok);
+  if(!allCorrect){S.hearts=Math.max(0,S.hearts-1);S.allOk=false;}
+  if(allCorrect)S.streak++;else S.streak=0;
+  S.answers.push({sc:sc.company,pts,ok:allCorrect,rows});
+  S.xp=Math.min(100,S.xp+pts/3);
+  updateHUD();
+
+  const av=AVATARS.find(a=>a.id===S.player.av);
+  document.getElementById('char-body').classList.remove('happy','sad');
+  setTimeout(()=>document.getElementById('char-body').classList.add(allCorrect?'happy':'sad'),50);
+
+  showFeedback(allCorrect,pts,rows,tb);
+}
+
+function evalSlot(sl,ind,label,scVars){
+  let pts=0,msgs=[];
+  // Detectar distractores usados
+  const distractors=(scVars||[]).filter(v=>!v.ok).map(v=>v.n);
+  const numDistractors=sl.num.filter(v=>distractors.includes(v));
+  const denDistractors=sl.den.filter(v=>distractors.includes(v));
+  const usedDistractor=numDistractors.length>0||denDistractors.length>0;
+
+  const numOk=ind.num.every(v=>sl.num.includes(v))&&!numDistractors.length;
+  const denOk=ind.den.every(v=>sl.den.includes(v))&&!denDistractors.length;
+  const hasNum=sl.num.length>0,hasDen=sl.den.length>0;
+
+  if(numOk&&hasNum){pts+=15;msgs.push('✅ Numerador correcto');}
+  else if(hasNum&&!numDistractors.length){pts+=5;msgs.push('⚠ Numerador parcialmente correcto');}
+  else if(numDistractors.length){msgs.push('🚫 Distractor en numerador: '+numDistractors.join(', '));}
+  else msgs.push('❌ Numerador vacío o incorrecto');
+
+  if(denOk&&hasDen){pts+=15;msgs.push('✅ Denominador correcto');}
+  else if(hasDen&&!denDistractors.length){pts+=5;msgs.push('⚠ Denominador parcialmente correcto');}
+  else if(denDistractors.length){msgs.push('🚫 Distractor en denominador: '+denDistractors.join(', '));}
+  else msgs.push('❌ Denominador vacío o incorrecto');
+
+  if(usedDistractor)msgs.push('⚠ Usaste variable(s) distractor — no puntúan');
+  msgs.push(`💡 ${ind.hint}`);
+  const correctNum=ind.num.join(' + ');
+  const correctDen=ind.den.join(' + ');
+  return{label,name:ind.name,ok:numOk&&denOk&&hasNum&&hasDen,pts,msgs,correctNum,correctDen,type:ind.type,usedDistractor};
+}
+
+// ═══════════════════ FEEDBACK ═══════════════════
+function showFeedback(ok,pts,rows,tb){
+  document.getElementById('fb-em').textContent=ok?'🎉':'😅';
+  document.getElementById('fb-title').textContent=ok?'¡Indicadores Correctos!':'Revisa las correcciones';
+  document.getElementById('fb-pts').textContent=`+${pts} pts`;
+  document.getElementById('fb-detail').innerHTML=rows.map(r=>`
+    <div class="fb-row ${r.ok?'ok':'ng'}">
+      <div><strong>${r.label} — ${r.name}</strong></div>
+      <div style="margin-top:3px">${r.msgs.join(' · ')}</div>
+      ${!r.ok?`<div class="correct-answer">
+        <strong>Respuesta correcta:</strong><br/>
+        Numerador: <code>${r.correctNum}</code><br/>
+        Denominador: <code>${r.correctDen}</code><br/>
+        Tipo: <code>${r.type}</code>
+      </div>`:''}
+    </div>`).join('')+(tb>0?`<div class="fb-row ok">⚡ Bonus tiempo: +${tb} pts</div>`:'');
+
+  document.getElementById('fb-overlay').classList.remove('off');
+  if(ok)confetti();
+
+  document.getElementById('fb-next').onclick=()=>{
+    document.getElementById('fb-overlay').classList.add('off');
+    if(S.hearts<=0){endGame();return;}
+    const nextIdx=S.scIdx+1;
+    S.scIdx++;
+    if(nextIdx<S.scenarios.length){
+      const mg=MINIGAMES[Math.floor(Math.random()*MINIGAMES.length)];
+      loadMini(mg,()=>loadScenario(nextIdx));
+    } else endGame();
+  };
+}
+
+// ═══════════════════ MINI GAMES ═══════════════════
+function loadMini(mg,cb){
+  S.miniCb=cb;
+  clearTimer();startTimer(45);
+  show('hud-scenario','MINIJUEGO');
+  if(mg.type==='classify')renderClassify(mg);
+  else renderDistractor(mg);
+  go('s-game');
+}
+function renderClassify(mg){
+  const q=mg.q[Math.floor(Math.random()*mg.q.length)];
+  document.getElementById('game-content').innerHTML=`
+    <div class="section-title">${mg.title}</div>
+    <p style="color:var(--tm);margin-bottom:16px">${mg.sub}</p>
+    <div style="background:rgba(124,58,237,.1);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;margin-bottom:20px">
+      <p style="font-size:1.1rem;font-weight:600">"${q.ind}"</p>
+    </div>
+    <div class="mini-opts">
+      <div class="mini-opt" onclick="checkClassify(this,'KPI','${q.ans}','${q.why.replace(/'/g,"&#39;")}')">
+        <div class="tag tag-c" style="margin-bottom:8px">KPI</div>
+        <div style="font-size:.82rem;color:var(--tm)">Indicador de Proceso</div>
+      </div>
+      <div class="mini-opt" onclick="checkClassify(this,'KGI','${q.ans}','${q.why.replace(/'/g,"&#39;")}')">
+        <div class="tag tag-a" style="margin-bottom:8px">KGI</div>
+        <div style="font-size:.82rem;color:var(--tm)">Indicador de Logro</div>
+      </div>
+    </div>
+    <div id="mini-fb" style="display:none;margin-top:16px"></div>`;
+}
+function checkClassify(el,chosen,correct,why){
+  const ok=chosen===correct;
+  el.classList.add(ok?'ok':'ng');
+  if(ok){S.score+=20;S.streak++;S.xp=Math.min(100,S.xp+8);}
+  else S.hearts=Math.max(0,S.hearts-1);
+  updateHUD();
+  const fb=document.getElementById('mini-fb');
+  fb.innerHTML=`<div style="padding:12px;border-radius:12px;background:${ok?'rgba(16,185,129,.1)':'rgba(239,68,68,.08)'};border:1px solid ${ok?'var(--g)':'var(--r)'};color:${ok?'var(--gg)':'var(--rg)'}">
+    ${ok?'✅':'❌'} ${why}
+  </div>
+  <button class="btn btn-p btn-full" style="margin-top:12px" onclick="finishMini()">Continuar →</button>`;
+  fb.style.display='block';
+  document.getElementById('char-body').classList.remove('happy','sad');
+  setTimeout(()=>document.getElementById('char-body').classList.add(ok?'happy':'sad'),50);
+}
+function renderDistractor(mg){
+  const q=mg.q[Math.floor(Math.random()*mg.q.length)];
+  const opts=shuffle([...q.opts]);
+  document.getElementById('game-content').innerHTML=`
+    <div class="section-title">${mg.title}</div>
+    <p style="color:var(--tm);margin-bottom:16px">${mg.sub}</p>
+    <div class="mini-opts" style="grid-template-columns:1fr 1fr">
+      ${opts.map(o=>`<div class="mini-opt" onclick="checkDistractor(this,'${o}','${q.ans}','${q.why.replace(/'/g,"&#39;")}')"><code style="font-size:.78rem">${o}</code></div>`).join('')}
+    </div>
+    <div id="mini-fb" style="display:none;margin-top:16px"></div>`;
+}
+function checkDistractor(el,chosen,correct,why){
+  const ok=chosen===correct;
+  el.classList.add(ok?'ok':'ng');
+  if(ok){S.score+=15;S.xp=Math.min(100,S.xp+6);}
+  else S.hearts=Math.max(0,S.hearts-1);
+  updateHUD();
+  const fb=document.getElementById('mini-fb');
+  fb.innerHTML=`<div style="padding:12px;border-radius:12px;background:${ok?'rgba(16,185,129,.1)':'rgba(239,68,68,.08)'};border:1px solid ${ok?'var(--g)':'var(--r)'};color:${ok?'var(--gg)':'var(--rg)'}">
+    ${ok?'✅':'❌'} ${why}
+  </div>
+  <button class="btn btn-p btn-full" style="margin-top:12px" onclick="finishMini()">Continuar →</button>`;
+  fb.style.display='block';
+}
+function finishMini(){clearTimer();if(S.miniCb)S.miniCb();}
+
+// ═══════════════════ DASHBOARD ═══════════════════
+function showDashboard(){
+  const totalIndD=S.scenarios.reduce((s,sc)=>s+sc.indicators.length,0)||1;
+  const maxScoreD=Math.max(200,totalIndD*30+S.scenarios.length*15);
+  const nota=Math.min(10,(S.score/maxScoreD)*10).toFixed(1);
+  const acc=S.answers.length?Math.round(S.answers.filter(a=>a.ok).length/S.answers.length*100):0;
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="dash-stat"><div class="dash-val" style="color:var(--pg)">${S.score}</div><div class="dash-lbl">Puntos</div></div>
+    <div class="dash-stat"><div class="dash-val" style="color:${nota>=7?'var(--gg)':nota>=5?'var(--ag)':'var(--rg)'}">${nota}</div><div class="dash-lbl">Calificación / 10</div></div>
+    <div class="dash-stat"><div class="dash-val" style="color:var(--cg)">${acc}%</div><div class="dash-lbl">Precisión</div></div>
+    <div class="dash-stat"><div class="dash-val" style="color:var(--ag)">${S.streak}</div><div class="dash-lbl">Racha actual</div></div>
+    <div class="dash-stat"><div class="dash-val" style="color:var(--rg)">${3-S.hearts}</div><div class="dash-lbl">Vidas perdidas</div></div>
+    <div class="dash-stat"><div class="dash-val" style="color:var(--tm)">${S.hintsUsed}</div><div class="dash-lbl">Pistas usadas</div></div>`;
+
+  // Accuracy ring
+  const r=70,circ=2*Math.PI*r;
+  const accOff=circ*(1-acc/100);
+  document.getElementById('dash-charts').innerHTML=`
+    <div class="dash-stat" style="padding:20px">
+      <div class="section-title">Precisión</div>
+      <svg class="pc-svg" viewBox="0 0 180 180" width="140" height="140" style="margin:0 auto;display:block">
+        <circle class="pc-bg" cx="90" cy="90" r="${r}"/>
+        <circle class="pc-fill" cx="90" cy="90" r="${r}" stroke="${acc>=70?'var(--g)':acc>=50?'var(--a)':'var(--r)'}"
+          stroke-dasharray="${circ}" stroke-dashoffset="${accOff}" transform="rotate(-90 90 90)" stroke-linecap="round"/>
+        <text x="90" y="95" text-anchor="middle" fill="var(--t)" font-family="Orbitron" font-size="22" font-weight="700">${acc}%</text>
+      </svg>
+    </div>
+    <div class="dash-stat">
+      <div class="section-title">Por Escenario</div>
+      ${S.answers.map(a=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.8rem">
+        <span style="color:var(--tm)">${a.sc}</span>
+        <span style="color:${a.ok?'var(--gg)':'var(--rg)'};font-weight:700">${a.pts} pts ${a.ok?'✅':'❌'}</span>
+      </div>`).join('')||'<p style="color:var(--td);font-size:.82rem">Sin datos aún</p>'}
+    </div>`;
+
+  go('s-dash');
+}
+function closeDash(){go('s-game');}
+
+// ═══════════════════ TIMER ═══════════════════
+function startTimer(secs){
+  clearTimer();S.timeLeft=secs;S.timeTotal=secs;
+  const circ=138;
+  const updateTimer=()=>{
+    const pct=S.timeLeft/S.timeTotal;
+    document.getElementById('timer-c').style.strokeDashoffset=circ*(1-pct);
+    document.getElementById('timer-c').style.stroke=pct>.5?'var(--pg)':pct>.25?'var(--ag)':'var(--rg)';
+    document.getElementById('timer-n').textContent=S.timeLeft;
+    if(S.timeLeft<=0){clearTimer();timeUp();return;}
+    S.timeLeft--;
+  };
+  updateTimer();S.timerInt=setInterval(updateTimer,1000);
+}
+function clearTimer(){clearInterval(S.timerInt);S.timerInt=null;}
+function timeUp(){
+  S.hearts=Math.max(0,S.hearts-1);updateHUD();
+  speak('⏰ ¡Se acabó el tiempo! Inténtalo más rápido.');
+  document.getElementById('fb-em').textContent='⏰';
+  document.getElementById('fb-title').textContent='¡Tiempo Agotado!';
+  document.getElementById('fb-pts').textContent='+0 pts';
+  document.getElementById('fb-detail').innerHTML='<div class="fb-row ng">El tiempo se agotó. Practica para ser más veloz.</div>';
+  document.getElementById('fb-overlay').classList.remove('off');
+  document.getElementById('fb-next').onclick=()=>{
+    document.getElementById('fb-overlay').classList.add('off');
+    if(S.hearts<=0){endGame();return;}
+    S.scIdx++;
+    if(S.scIdx<S.scenarios.length)loadScenario(S.scIdx);else endGame();
+  };
+}
+
+// ═══════════════════ HINTS ═══════════════════
+function useHint(){
+  const sc=S.scenarios[S.scIdx];
+  if(!sc||S.hintsLeft<=0){speak('No quedan más pistas 😔');return;}
+  S.hintsLeft--;S.hintsUsed++;S.noHints=false;
+  document.getElementById('hint-ct').textContent=S.hintsLeft;
+  const idx=Math.min(S.hintsUsed-1,sc.hints.length-1);
+  document.getElementById('hint-text').textContent=sc.hints[idx]||sc.hints[0];
+  document.getElementById('hint-overlay').classList.remove('off');
+}
+function closeHint(){document.getElementById('hint-overlay').classList.add('off');}
+
+// ═══════════════════ HUD ═══════════════════
+function updateHUD(){
+  document.getElementById('hud-score').textContent=S.score+' pts';
+  document.getElementById('xp-fill').style.width=S.xp+'%';
+  const hh=document.getElementById('hud-hearts');
+  hh.innerHTML=[0,1,2].map(i=>`<span class="heart${i>=S.hearts?' dead':''}">❤️</span>`).join('');
+}
+
+// ═══════════════════ CHARACTER ═══════════════════
+let speechTimer=null;
+function speak(msg){
+  const s=document.getElementById('speech');
+  s.textContent=msg;s.classList.remove('off');
+  clearTimeout(speechTimer);
+  speechTimer=setTimeout(()=>s.classList.add('off'),3500);
+}
+function toggleSpeech(){
+  const phrases=['Recuerda: KPI = proceso, KGI = logro final 🎯','¡Arrastra las variables correctas!','Los distractores intentan confundirte 🕵️','¡Tú puedes lograrlo! 💪','Fíjate en el numerador y denominador 📊'];
+  speak(phrases[Math.floor(Math.random()*phrases.length)]);
+}
+
+// ═══════════════════ END GAME ═══════════════════
+function endGame(){
+  clearTimer();
+  document.getElementById('hud').style.display='none';
+  document.getElementById('char-wrap').classList.add('off');
+  checkBadges();
+  // Nota dinámica: puntaje máximo = 30pts/indicador × total indicadores + bonos
+  const totalInd=S.scenarios.reduce((s,sc)=>s+sc.indicators.length,0);
+  const maxScore=Math.max(200,totalInd*30+S.scenarios.length*15);
+  const nota=Math.min(10,(S.score/maxScore)*10).toFixed(1);
+  const stars=nota>=9?3:nota>=7?2:nota>=5?1:0;
+  const emojis=['💪','😊','⭐','🏆'];
+  const msgs=['Sigue practicando. Repasa la diferencia entre KPI y KGI.','Buen intento. Continúa mejorando tus fórmulas.','Muy buen trabajo. Dominas los conceptos clave.','¡Sobresaliente! Eres un maestro de indicadores.'];
+
+  document.getElementById('res-emoji').textContent=emojis[stars];
+  document.getElementById('res-title').textContent=nota>=7?'MISIÓN COMPLETADA':'MISIÓN FINALIZADA';
+  document.getElementById('res-msg').textContent=msgs[stars];
+  document.getElementById('res-stars').innerHTML=[0,1,2].map(i=>`<span class="${i<stars?'star-lit':'star-dim'}">⭐</span>`).join('');
+  const elapsed=Math.round((Date.now()-S.startTime)/1000);
+  document.getElementById('res-grid').innerHTML=`
+    <div class="r-stat"><div class="r-val">${S.score}</div><div class="r-lbl">Puntos</div></div>
+    <div class="r-stat"><div class="r-val">${nota}/10</div><div class="r-lbl">Calificación</div></div>
+    <div class="r-stat"><div class="r-val">${S.answers.filter(a=>a.ok).length}/${S.answers.length}</div><div class="r-lbl">Aciertos</div></div>
+    <div class="r-stat"><div class="r-val">${fmt(elapsed)}</div><div class="r-lbl">Tiempo</div></div>`;
+  document.getElementById('badges-row').innerHTML=S.badges.map(id=>{
+    const b=BADGES.find(x=>x.id===id);
+    return b?`<span class="tag tag-a">${b.icon} ${b.name}</span>`:'';
+  }).join('');
+  saveLB(nota);
+  go('s-result');
+  if(stars>=2)confetti();
+}
+
+function checkBadges(){
+  if(S.noHints&&!S.badges.includes('no_hints')){S.badges.push('no_hints');achToast('no_hints');}
+  if(S.allOk&&!S.badges.includes('perfect')){S.badges.push('perfect');achToast('perfect');}
+  if(S.scIdx===S.scenarios.length&&!S.badges.includes('full_clear')){S.badges.push('full_clear');achToast('full_clear');}
+  const elapsed=(Date.now()-S.startTime)/1000;
+  const totalLimit=S.scenarios.reduce((s,sc)=>s+sc.timeLimit,0);
+  if(elapsed<totalLimit/2&&!S.badges.includes('speedrun')){S.badges.push('speedrun');achToast('speedrun');}
+}
+function achToast(id){
+  const b=BADGES.find(x=>x.id===id);if(!b)return;
+  document.getElementById('ach-icon').textContent=b.icon;
+  document.getElementById('ach-name').textContent=b.name+' – '+b.desc;
+  const t=document.getElementById('ach-toast');t.classList.remove('off');
+  setTimeout(()=>t.classList.add('off'),3500);
+}
+
+// ═══════════════════ REPORT ═══════════════════
+function showReport(){
+  const p=S.player;
+  const totalIndR=S.scenarios.reduce((s,sc)=>s+sc.indicators.length,0);
+  const maxScoreR=Math.max(200,totalIndR*30+S.scenarios.length*15);
+  const nota=Math.min(10,(S.score/maxScoreR)*10).toFixed(1);
+  const elapsed=Math.round((Date.now()-S.startTime)/1000);
+  const desemp=nota>=9?'Sobresaliente':nota>=7?'Muy Bueno':nota>=5?'Bueno':'Necesita Mejorar';
+  document.getElementById('report-body').innerHTML=`
+    <div class="rep-section">
+      <div class="section-title">Datos del Estudiante</div>
+      ${[['Nombre',`${p.nom} ${p.ape}`],['Asignatura',p.asi||'—'],['Docente',p.doc||'—'],['Paralelo',p.par||'—'],['Fecha',p.fec||new Date().toLocaleDateString('es')],['Nivel',{basic:'Básico',medium:'Medio',expert:'Experto'}[S.level]]].map(([k,v])=>`<div class="rep-row"><span class="rep-key">${k}</span><span class="rep-val">${v}</span></div>`).join('')}
+    </div>
+    <div class="rep-section">
+      <div class="section-title">Resultados</div>
+      ${[['Puntos totales',S.score],['Calificación',nota+'/10'],['Aciertos',`${S.answers.filter(a=>a.ok).length}/${S.answers.length}`],['Tiempo',fmt(elapsed)],['Desempeño',desemp],['Pistas usadas',S.hintsUsed]].map(([k,v])=>`<div class="rep-row"><span class="rep-key">${k}</span><span class="rep-val">${v}</span></div>`).join('')}
+    </div>
+    <div class="rep-section">
+      <div class="section-title">Detalle por Escenario</div>
+      ${S.answers.map(a=>`<div class="rep-row"><span class="rep-key">${a.sc}</span><span class="rep-val" style="color:${a.ok?'var(--gg)':'var(--rg)'}">${a.pts} pts ${a.ok?'✅':'❌'}</span></div>`).join('')}
+    </div>
+    ${S.badges.length?`<div class="rep-section"><div class="section-title">Logros</div>${S.badges.map(id=>{const b=BADGES.find(x=>x.id===id);return b?`<div class="rep-row"><span class="rep-key">${b.icon} ${b.name}</span><span class="rep-val" style="color:var(--tm);font-weight:400">${b.desc}</span></div>`:''}).join('')}</div>`:''}
+    <p style="text-align:center;color:var(--td);font-size:.72rem;margin-top:12px">KPI Quest · ${new Date().toLocaleDateString('es')}</p>`;
+  go('s-report');
+}
+
+// ═══════════════════ PDF ═══════════════════
+function downloadPDF(){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const p=S.player;
+  const totalIndP=S.scenarios.reduce((s,sc)=>s+sc.indicators.length,0);
+  const maxScoreP=Math.max(200,totalIndP*30+S.scenarios.length*15);
+  const nota=Math.min(10,(S.score/maxScoreP)*10).toFixed(1);
+  const elapsed=Math.round((Date.now()-S.startTime)/1000);
+
+  // Header gradient
+  doc.setFillColor(79,70,229);doc.rect(0,0,210,42,'F');
+  doc.setFillColor(91,33,182,50);doc.rect(0,0,210,42,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(24);doc.setFont('helvetica','bold');
+  doc.text('KPI QUEST',105,18,{align:'center'});
+  doc.setFontSize(11);doc.setFont('helvetica','normal');
+  doc.text('Reporte de Evaluación Académica',105,30,{align:'center'});
+
+  // Student
+  doc.setTextColor(30,27,75);doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text('Datos del Estudiante',14,54);
+  const info=[['Estudiante:',`${p.nom} ${p.ape}`],['Asignatura:',p.asi||'—'],['Docente:',p.doc||'—'],['Paralelo:',p.par||'—'],['Fecha:',p.fec||new Date().toLocaleDateString('es')],['Nivel:',{basic:'Básico',medium:'Medio',expert:'Experto'}[S.level]]];
+  doc.setFontSize(10);
+  info.forEach((r,i)=>{
+    const x=i%2===0?14:110,y=62+Math.floor(i/2)*8;
+    doc.setFont('helvetica','bold');doc.text(r[0],x,y);
+    doc.setFont('helvetica','normal');doc.text(r[1],x+30,y);
+  });
+
+  // Score
+  doc.setFillColor(238,242,255);doc.roundedRect(14,82,182,24,4,4,'F');
+  doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(79,70,229);
+  doc.text(`Puntos: ${S.score}`,20,92);
+  doc.text(`Calificación: ${nota}/10`,75,92);
+  doc.text(`Tiempo: ${fmt(elapsed)}`,145,92);
+  doc.text(`Aciertos: ${S.answers.filter(a=>a.ok).length}/${S.answers.length}`,20,102);
+  const desemp=nota>=9?'Sobresaliente':nota>=7?'Muy Bueno':nota>=5?'Bueno':'Necesita Mejorar';
+  doc.text(`Desempeño: ${desemp}`,75,102);
+
+  // Answers
+  doc.setTextColor(30,27,75);doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Detalle por Escenario',14,116);
+  let y=124;
+  S.answers.forEach((a,i)=>{
+    if(y>265){doc.addPage();y=20;}
+    doc.setFillColor(a.ok?220:254,a.ok?252:226,a.ok?231:232);
+    doc.rect(14,y-5,182,9,'F');
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(30,27,75);
+    doc.text(`${i+1}. ${a.sc}`,18,y);
+    doc.setFont('helvetica','normal');doc.text(`${a.pts} pts · ${a.ok?'Correcto':'Incorrecto'}`,160,y);
+    y+=12;
+  });
+
+  // Badges
+  if(S.badges.length){
+    if(y>250){doc.addPage();y=20;}
+    doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(79,70,229);
+    doc.text('Logros Obtenidos',14,y+6);y+=14;
+    S.badges.forEach(id=>{
+      const b=BADGES.find(x=>x.id===id);
+      if(b){doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(30,27,75);doc.text(`• ${b.name}: ${b.desc}`,18,y);y+=8;}
+    });
+  }
+
+  doc.setFontSize(8);doc.setTextColor(100,100,120);
+  doc.text(`KPI Quest – Generado el ${new Date().toLocaleDateString('es')}`,105,287,{align:'center'});
+  doc.save(`KPIQuest_${p.nom}_${p.ape}.pdf`);
+}
+
+// ═══════════════════ LEADERBOARD ═══════════════════
+function saveLB(nota){
+  const lb=JSON.parse(localStorage.getItem('kpiq_lb')||'[]');
+  lb.push({n:`${S.player.nom} ${S.player.ape}`,s:S.score,nota,lv:S.level,d:new Date().toLocaleDateString('es')});
+  lb.sort((a,b)=>b.s-a.s);
+  localStorage.setItem('kpiq_lb',JSON.stringify(lb.slice(0,10)));
+}
+function showLeaderboard(){
+  const lb=JSON.parse(localStorage.getItem('kpiq_lb')||'[]');
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById('lead-body').innerHTML=lb.length?lb.map((e,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,.03);border-radius:12px;margin-bottom:8px;border:1px solid ${i===0?'rgba(245,158,11,.3)':'var(--border)'}">
+      <span style="font-size:1.4rem;width:32px">${medals[i]||'#'+(i+1)}</span>
+      <div style="flex:1"><div style="font-weight:700">${e.n}</div><div style="font-size:.75rem;color:var(--tm)">${e.lv} · ${e.d}</div></div>
+      <div style="text-align:right"><div class="orb" style="font-size:1.1rem;color:var(--pg)">${e.s}</div><div style="font-size:.75rem;color:var(--tm)">${e.nota}/10</div></div>
+    </div>`).join('')
+    :'<p style="color:var(--td);text-align:center;padding:20px">Aún no hay registros</p>';
+  go('s-lead');
+}
+
+// ═══════════════════ CONFETTI ═══════════════════
+function confetti(){
+  const colors=['#A78BFA','#67E8F9','#FCD34D','#6EE7B7','#F9A8D4','#FCA5A5'];
+  for(let i=0;i<70;i++){
+    const el=document.createElement('div');
+    el.className='conf';
+    el.style.cssText=`left:${Math.random()*100}vw;top:-15px;width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;background:${colors[i%colors.length]};animation-duration:${2+Math.random()*2}s;animation-delay:${Math.random()*1.5}s`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),4500);
+  }
+}
+
+// ═══════════════════ THEORY MODAL ═══════════════════
+function showTheory(){document.getElementById('theory-overlay').classList.remove('off');}
+function closeTheory(){document.getElementById('theory-overlay').classList.add('off');}
+
+// ═══════════════════ UTILS ═══════════════════
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=~~(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function fmt(s){return`${~~(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
+
+// INIT
+document.getElementById('r-fec').value=new Date().toISOString().split('T')[0];
+selLv('basic');
+buildAvGrid();
+</script>
+</body>
+</html>
